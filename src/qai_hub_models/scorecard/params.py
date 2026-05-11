@@ -19,6 +19,7 @@ from qai_hub_models.scorecard import (
 )
 from qai_hub_models.scorecard.device import cs_universal
 from qai_hub_models.scorecard.results.scorecard_job import JobTypeVar  # noqa: F401
+from qai_hub_models.utils.export_result import ComponentGroup
 
 ScorecardPathT = TypeVar(
     "ScorecardPathT", ScorecardProfilePath, ScorecardCompilePath, None
@@ -237,7 +238,7 @@ class ScExportTestParams(Generic[ScorecardPathT]):
     device: ScorecardDevice | None = None
     component_names: list[str] | None = None
     graph_names: list[str] | None = None
-    component_graph_names: dict[str, list[str]] | None = None
+    component_graph_names: ComponentGroup[list[str]] | None = None
 
     def str_with_description(self, val: str) -> str:
         return _str_with_description(

@@ -34,6 +34,11 @@ from qai_hub_models.models.protocols import (
     HubModelProtocol,
     PretrainedHubModelProtocol,
 )
+from qai_hub_models.utils.export_result import (
+    ComponentGroup,
+    MultiGraphComponentGroup,
+    MultiGraphGroup,
+)
 from qai_hub_models.utils.input_spec import (
     InputSpec,
     broadcast_data_to_multi_batch,
@@ -181,14 +186,16 @@ class CollectionModel(Generic[ComponentT]):
         self,
         input_specs: dict[str, InputSpec] | None = None,
         use_channel_last_format: bool = True,
-    ) -> dict[str, SampleInputsType]:
-        return {
-            component_name: component.sample_inputs(
-                input_spec=input_specs.get(component_name) if input_specs else None,
-                use_channel_last_format=use_channel_last_format,
-            )
-            for component_name, component in self.components.items()
-        }
+    ) -> ComponentGroup[SampleInputsType]:
+        return ComponentGroup(
+            {
+                component_name: component.sample_inputs(
+                    input_spec=input_specs.get(component_name) if input_specs else None,
+                    use_channel_last_format=use_channel_last_format,
+                )
+                for component_name, component in self.components.items()
+            }
+        )
 
     def get_component_precisions(
         self,
@@ -222,14 +229,16 @@ class CollectionModel(Generic[ComponentT]):
         self,
         target_runtime: TargetRuntime,
         other_profile_options: str = "",
-    ) -> dict[str, str]:
-        return {
-            component_name: component.get_hub_profile_options(
-                target_runtime=target_runtime,
-                other_profile_options=other_profile_options,
-            )
-            for component_name, component in self.components.items()
-        }
+    ) -> ComponentGroup[str]:
+        return ComponentGroup(
+            {
+                component_name: component.get_hub_profile_options(
+                    target_runtime=target_runtime,
+                    other_profile_options=other_profile_options,
+                )
+                for component_name, component in self.components.items()
+            }
+        )
 
     def write_supplementary_files(
         self,
@@ -723,7 +732,7 @@ class MultiGraphBaseModel(BaseModel):
     re-derive the graph/spec mapping.
     """
 
-    def get_input_spec(self, *args: Any, **kwargs: Any) -> dict[str, InputSpec]:
+    def get_input_spec(self, *args: Any, **kwargs: Any) -> MultiGraphGroup[InputSpec]:
         """Return input specifications keyed by graph name.
 
         Parameters
@@ -735,7 +744,7 @@ class MultiGraphBaseModel(BaseModel):
 
         Returns
         -------
-        dict[str, InputSpec]
+        MultiGraphGroup[InputSpec]
             Mapping from context-graph name (e.g. ``"token_ar1_cl4096_1_of_3"``)
             to the ``InputSpec`` for that graph.
         """
@@ -747,7 +756,7 @@ class MultiGraphBaseModel(BaseModel):
         precision: Precision,
         other_compile_options: str = "",
         device: Device | None = None,
-    ) -> dict[str, str]:
+    ) -> MultiGraphGroup[str]:
         """Return compile-option strings keyed by graph name.
 
         Iterates ``get_input_spec()`` and delegates to
@@ -767,11 +776,11 @@ class MultiGraphBaseModel(BaseModel):
 
         Returns
         -------
-        dict[str, str]
+        MultiGraphGroup[str]
             Mapping from context-graph name to the compile-options string
             for that graph.
         """
-        out: dict[str, str] = {}
+        out: MultiGraphGroup[str] = MultiGraphGroup()
         for graph_name in self.get_input_spec():
             out[graph_name] = super().get_hub_compile_options(
                 target_runtime,
@@ -786,7 +795,7 @@ class MultiGraphBaseModel(BaseModel):
         self,
         target_runtime: TargetRuntime,
         other_profile_options: str = "",
-    ) -> dict[str, str]:
+    ) -> MultiGraphGroup[str]:
         """Return profile-option strings keyed by graph name.
 
         Iterates ``get_input_spec()`` and delegates to
@@ -802,11 +811,11 @@ class MultiGraphBaseModel(BaseModel):
 
         Returns
         -------
-        dict[str, str]
+        MultiGraphGroup[str]
             Mapping from context-graph name to the profile-options string
             for that graph.
         """
-        out: dict[str, str] = {}
+        out: MultiGraphGroup[str] = MultiGraphGroup()
         for graph_name in self.get_input_spec():
             out[graph_name] = super().get_hub_profile_options(
                 target_runtime,
@@ -820,7 +829,7 @@ class MultiGraphBaseModel(BaseModel):
         input_spec: InputSpec | None = None,
         use_channel_last_format: bool = True,
         **kwargs: Any,
-    ) -> dict[str, SampleInputsType]:
+    ) -> MultiGraphGroup[SampleInputsType]:
         """Return sample inputs keyed by graph name.
 
         Iterates ``get_input_spec()`` and delegates to
@@ -837,11 +846,11 @@ class MultiGraphBaseModel(BaseModel):
 
         Returns
         -------
-        dict[str, SampleInputsType]
+        MultiGraphGroup[SampleInputsType]
             Mapping from context-graph name to sample input tensors
             for that graph.
         """
-        out: dict[str, SampleInputsType] = {}
+        out: MultiGraphGroup[SampleInputsType] = MultiGraphGroup()
         for graph_name, spec in self.get_input_spec().items():
             out[graph_name] = super().sample_inputs(
                 spec, use_channel_last_format, **kwargs
@@ -907,28 +916,28 @@ class MultiGraphPretrainedCollectionModel(
 
     def get_input_spec(
         self,
-    ) -> dict[str, dict[str | None, InputSpec]]:
+    ) -> MultiGraphComponentGroup[InputSpec]:
         """Return input specifications for every component and graph.
 
         For ``MultiGraphBaseModel`` components the inner dict is the
         component's own ``get_input_spec()`` (graph_name -> InputSpec).
-        For plain ``BaseModel`` components, a single-entry dict is
-        synthesized using the component name as the graph key.
+        For plain ``BaseModel`` components, a single-entry is
+        synthesized with graph_name=None.
 
         Returns
         -------
-        dict[str, dict[str | None, InputSpec]]
-            Outer key: component name (e.g. ``"llama3_2_1b_part1_of_3"``).
-            Inner key: context-graph name (e.g.
-            ``"token_ar1_cl4096_1_of_3"``) or None.
-            Value: the ``InputSpec`` for that graph.
+        MultiGraphComponentGroup[InputSpec]
+            Keyed by (component_name, graph_name | None).
         """
-        out: dict[str, dict[str | None, InputSpec]] = {}
+        out: MultiGraphComponentGroup[InputSpec] = MultiGraphComponentGroup()
         for comp_name, component in self.components.items():
             if isinstance(component, MultiGraphBaseModel):
-                out[comp_name] = component.get_input_spec()  # type: ignore[assignment]
+                for graph_name, spec in component.get_input_spec().items():
+                    out.component_graph_names[(comp_name, graph_name)] = spec
             else:
-                out[comp_name] = {None: component.get_input_spec()}
+                out.component_graph_names[(comp_name, None)] = (
+                    component.get_input_spec()
+                )
         return out
 
     def get_hub_compile_options(
@@ -937,7 +946,7 @@ class MultiGraphPretrainedCollectionModel(
         precision: Precision,
         other_compile_options: str = "",
         device: Device | None = None,
-    ) -> dict[str, dict[str, str]]:
+    ) -> MultiGraphComponentGroup[str]:
         """Return compile-option strings for every component and graph.
 
         Delegates to each component's ``get_hub_compile_options``.
@@ -955,34 +964,33 @@ class MultiGraphPretrainedCollectionModel(
 
         Returns
         -------
-        dict[str, dict[str, str]]
-            Outer key: component name.
-            Inner key: context-graph name.
-            Value: compile-options string for that graph.
+        MultiGraphComponentGroup[str]
+            Keyed by (component_name, graph_name | None).
         """
-        out: dict[str, dict[str, str]] = {}
+        out: MultiGraphComponentGroup[str] = MultiGraphComponentGroup()
         for comp_name, component in self.components.items():
             if isinstance(component, MultiGraphBaseModel):
-                out[comp_name] = component.get_hub_compile_options(
+                for graph_name, opts in component.get_hub_compile_options(
                     target_runtime, precision, other_compile_options, device
-                )
+                ).items():
+                    out.component_graph_names[(comp_name, graph_name)] = opts
             else:
-                out[comp_name] = {
-                    comp_name: component.get_hub_compile_options(
+                out.component_graph_names[(comp_name, None)] = (
+                    component.get_hub_compile_options(
                         target_runtime,
                         precision,
                         other_compile_options,
                         device,
                         context_graph_name=comp_name,
                     )
-                }
+                )
         return out
 
     def get_hub_profile_options(
         self,
         target_runtime: TargetRuntime,
         other_profile_options: str = "",
-    ) -> dict[str, dict[str, str]]:
+    ) -> MultiGraphComponentGroup[str]:
         """Return profile-option strings for every component and graph.
 
         Delegates to each component's ``get_hub_profile_options``.
@@ -996,32 +1004,31 @@ class MultiGraphPretrainedCollectionModel(
 
         Returns
         -------
-        dict[str, dict[str, str]]
-            Outer key: component name.
-            Inner key: context-graph name.
-            Value: profile-options string for that graph.
+        MultiGraphComponentGroup[str]
+            Keyed by (component_name, graph_name | None).
         """
-        out: dict[str, dict[str, str]] = {}
+        out: MultiGraphComponentGroup[str] = MultiGraphComponentGroup()
         for comp_name, component in self.components.items():
             if isinstance(component, MultiGraphBaseModel):
-                out[comp_name] = component.get_hub_profile_options(
+                for graph_name, opts in component.get_hub_profile_options(
                     target_runtime, other_profile_options
-                )
+                ).items():
+                    out.component_graph_names[(comp_name, graph_name)] = opts
             else:
-                out[comp_name] = {
-                    comp_name: component.get_hub_profile_options(
+                out.component_graph_names[(comp_name, None)] = (
+                    component.get_hub_profile_options(
                         target_runtime,
                         other_profile_options,
                         context_graph_name=comp_name,
                     )
-                }
+                )
         return out
 
     def sample_inputs(
         self,
         use_channel_last_format: bool = True,
         **kwargs: Any,
-    ) -> dict[str, dict[str, SampleInputsType]]:
+    ) -> MultiGraphComponentGroup[SampleInputsType]:
         """Return sample inputs for every component and graph.
 
         Delegates to each component's ``sample_inputs()``.
@@ -1035,23 +1042,20 @@ class MultiGraphPretrainedCollectionModel(
 
         Returns
         -------
-        dict[str, dict[str, SampleInputsType]]
-            Outer key: component name.
-            Inner key: context-graph name.
-            Value: sample input tensors for that graph.
+        MultiGraphComponentGroup[SampleInputsType]
+            Keyed by (component_name, graph_name | None).
         """
-        out: dict[str, dict[str, SampleInputsType]] = {}
+        out: MultiGraphComponentGroup[SampleInputsType] = MultiGraphComponentGroup()
         for comp_name, component in self.components.items():
             if isinstance(component, MultiGraphBaseModel):
-                out[comp_name] = component.sample_inputs(
+                for graph_name, inputs in component.sample_inputs(
+                    use_channel_last_format=use_channel_last_format, **kwargs
+                ).items():
+                    out.component_graph_names[(comp_name, graph_name)] = inputs
+            else:
+                out.component_graph_names[(comp_name, None)] = component.sample_inputs(
                     use_channel_last_format=use_channel_last_format, **kwargs
                 )
-            else:
-                out[comp_name] = {
-                    comp_name: component.sample_inputs(
-                        use_channel_last_format=use_channel_last_format, **kwargs
-                    )
-                }
         return out
 
 

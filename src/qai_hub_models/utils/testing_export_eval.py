@@ -123,24 +123,24 @@ ExportFunc = Callable[
 JobFunc = Callable[..., hub.Job | dict[str, hub.Job]]
 
 
-def _get_componens_and_graph_names(
+def _get_components_and_graph_names(
     model: Any,
     model_id: str | None = None,
-) -> tuple[list[str] | None, list[str] | None, dict[str, list[str]] | None]:
+) -> tuple[list[str] | None, list[str] | None, ComponentGroup[list[str]] | None]:
     components: list[str] | None = None
     graph_names: list[str] | None = None
-    component_graph_names: dict[str, list[str]] | None = None
+    component_graph_names: ComponentGroup[list[str]] | None = None
 
     if isinstance(model, CollectionModel):
         components = model.component_class_names
+        cgn: dict[str, list[str]] = {}
         for component_name, component in model.components.items():
             if isinstance(component, MultiGraphBaseModel):
-                component_graph_names = component_graph_names or {}
-                component_graph_names[component_name] = list(
-                    component.get_input_spec().keys()
-                )
+                cgn[component_name] = list(component.get_input_spec())
+        if cgn:
+            component_graph_names = ComponentGroup(cgn)
     elif isinstance(model, MultiGraphBaseModel):
-        graph_names = list(model.get_input_spec().keys())
+        graph_names = list(model.get_input_spec())
 
     if model_id is not None:
         _stash_component_graph_names(
@@ -154,7 +154,7 @@ def _stash_component_graph_names(
     model_id: str,
     components: list[str] | None,
     graph_names: list[str] | None,
-    component_graph_names: dict[str, list[str]] | None,
+    component_graph_names: ComponentGroup[list[str]] | None,
 ) -> None:
     """Write component and graph names to scorecard artifact YAMLs."""
     if components is not None:
@@ -503,7 +503,7 @@ def pre_quantize_compile_via_export(
         QAIHM instance of the model.
     """
     component_names, graph_names, component_graph_names = (
-        _get_componens_and_graph_names(model, model_id)
+        _get_components_and_graph_names(model, model_id)
     )
     assert component_graph_names is None, (
         "Auto-quantization of multi-graph models is not supported"
@@ -563,7 +563,7 @@ def quantize_via_export(
         Model precision.
     """
     component_names, graph_names, component_graph_names = (
-        _get_componens_and_graph_names(model, model_id)
+        _get_components_and_graph_names(model, model_id)
     )
     assert component_graph_names is None, (
         "Auto-quantization of multi-graph models is not supported"
@@ -655,7 +655,7 @@ def compile_via_export(
         Whether the model uses local aimet encodings during compilation.
     """
     component_names, graph_names, component_graph_names = (
-        _get_componens_and_graph_names(model, model_id)
+        _get_components_and_graph_names(model, model_id)
     )
     test_params = ScExportTestParams(
         model_id,
@@ -760,7 +760,7 @@ def link_via_export(
     assert scorecard_path.runtime.uses_hub_link
 
     component_names, graph_names, component_graph_names = (
-        _get_componens_and_graph_names(model, model_id)
+        _get_components_and_graph_names(model, model_id)
     )
     test_params = ScExportTestParams(
         model_id,
@@ -872,7 +872,7 @@ def run_llm_compile(
     cache = CompileScorecardJobYaml.from_test_artifacts()
     cache.update_from_export_output(
         ComponentGroup(
-            components={
+            {
                 name: er.compile_job
                 for name, er in result.components.items()
                 if er.compile_job is not None
@@ -1020,7 +1020,7 @@ def profile_via_export(
         Scorecard device.
     """
     component_names, graph_names, component_graph_names = (
-        _get_componens_and_graph_names(model, model_id)
+        _get_components_and_graph_names(model, model_id)
     )
     test_params = ScExportTestParams(
         model_id,
@@ -1104,7 +1104,7 @@ def inference_via_export(
         Scorecard device.
     """
     component_names, graph_names, component_graph_names = (
-        _get_componens_and_graph_names(model, model_id)
+        _get_components_and_graph_names(model, model_id)
     )
     test_params = ScExportTestParams(
         model_id,
@@ -1375,7 +1375,7 @@ def on_device_inference_for_accuracy_validation(
         Scorecard device.
     """
     component_names, graph_names, component_graph_names = (
-        _get_componens_and_graph_names(model, model_id)
+        _get_components_and_graph_names(model, model_id)
     )
     assert graph_names is None and component_graph_names is None, (
         "Graph names are not supported for on-device inference"
@@ -1425,7 +1425,7 @@ def on_device_inference_for_accuracy_validation(
 
     cache = InferenceScorecardJobYaml.from_test_artifacts()
     cache.update_from_export_output(
-        job if job else ComponentGroup(components=jobs_dict), test_params
+        job if job else ComponentGroup(jobs_dict), test_params
     )
     cache.to_file()
 
@@ -1635,7 +1635,7 @@ def accuracy_on_sample_inputs_via_export(
         Default is None.
     """
     component_names, graph_names, component_graph_names = (
-        _get_componens_and_graph_names(model, model_id)
+        _get_components_and_graph_names(model, model_id)
     )
     assert graph_names is None and component_graph_names is None, (
         "Graph names are not supported for on-device inference"
@@ -1776,7 +1776,7 @@ def accuracy_on_dataset_via_evaluate_and_export(
 
     """
     component_names, graph_names, component_graph_names = (
-        _get_componens_and_graph_names(model, model_id)
+        _get_components_and_graph_names(model, model_id)
     )
     assert graph_names is None and component_graph_names is None, (
         "Graph names are not supported for on-device inference"
@@ -2024,7 +2024,7 @@ def sim_accuracy_on_dataset(
 
     """
     component_names, graph_names, component_graph_names = (
-        _get_componens_and_graph_names(model, model_id)
+        _get_components_and_graph_names(model, model_id)
     )
     assert (
         component_names is None

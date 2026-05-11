@@ -64,6 +64,7 @@ from qai_hub_models.utils.base_model import (
     MultiGraphPretrainedCollectionModel,
     TargetRuntime,
 )
+from qai_hub_models.utils.export_result import MultiGraphGroup
 from qai_hub_models.utils.input_spec import InputSpec
 from qai_hub_models.utils.llm_helpers import (
     create_genie_config,
@@ -600,7 +601,7 @@ class Llama3_2_1B_PartBase(MultiGraphBaseModel):
         precision: Precision,
         other_compile_options: str = "",
         device: Device | None = None,
-    ) -> dict[str, str]:
+    ) -> MultiGraphGroup[str]:
         other_compile_options += " --quantize_full_type w8a16"
         return super().get_hub_compile_options(
             target_runtime, precision, other_compile_options, device
@@ -610,13 +611,13 @@ class Llama3_2_1B_PartBase(MultiGraphBaseModel):
         self,
         target_runtime: TargetRuntime,
         other_profile_options: str = "",
-    ) -> dict[str, str]:
+    ) -> MultiGraphGroup[str]:
         """Get profile options keyed by graph name.
 
         For quantized models, delegates to the PreSplit for extra options.
         """
         if self._is_quantized:
-            out: dict[str, str] = {}
+            out: MultiGraphGroup[str] = MultiGraphGroup()
             for graph_name in self.get_input_spec():
                 out[graph_name] = self._presplit.get_hub_profile_options(
                     target_runtime=target_runtime,
@@ -630,12 +631,12 @@ class Llama3_2_1B_PartBase(MultiGraphBaseModel):
             other_profile_options=other_profile_options,
         )
 
-    def get_input_spec(self) -> dict[str, InputSpec]:
+    def get_input_spec(self) -> MultiGraphGroup[InputSpec]:
         # Return one graph per sequence length so the genie bundle contains
         # both ar128 (prompt processing) and ar1 (token generation) models.
         # compile_model and link_model already iterate over multiple graphs.
         ctx_len = self._presplit.context_length
-        specs: dict[str, InputSpec] = {}
+        specs: MultiGraphGroup[InputSpec] = MultiGraphGroup()
         for seq_len in self._sequence_lengths:
             inst = "token" if seq_len == 1 else "prompt"
             graph_name = (

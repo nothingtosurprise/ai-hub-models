@@ -168,15 +168,14 @@ def profile_model(
 
 
 def inference_model(
-    inputs: dict[str, SampleInputsType],
+    inputs: ComponentGroup[SampleInputsType],
     model_name: str,
     device: hub.Device,
-    options: dict[str, str],
-    target_models: dict[str, hub.Model],
-    components: list[str] | None = None,
-) -> dict[str, hub.client.InferenceJob]:
+    options: ComponentGroup[str],
+    target_models: ComponentGroup[hub.Model],
+) -> ComponentGroup[hub.client.InferenceJob]:
     inference_jobs: dict[str, hub.client.InferenceJob] = {}
-    for component_name in components or Model.component_class_names:
+    for component_name in target_models:
         print(
             f"Running inference for {component_name} on a hosted device with example inputs."
         )
@@ -190,7 +189,7 @@ def inference_model(
         inference_jobs[component_name] = cast(
             hub.client.InferenceJob, submitted_inference_job
         )
-    return inference_jobs
+    return ComponentGroup(inference_jobs)
 
 
 def download_model(
@@ -422,15 +421,11 @@ def export_model(
             target_runtime,
         )
         # Extract target models from link jobs for profile/inference
-        target_models = assert_success_and_get_target_models(
-            ComponentGroup(components=link_jobs)
-        ).components
+        target_models = assert_success_and_get_target_models(ComponentGroup(link_jobs))
     else:
         # For JIT runtimes, extract models from compile jobs
         flat_jobs = {k: v[0] for k, v in compile_jobs.items()}
-        target_models = assert_success_and_get_target_models(
-            ComponentGroup(components=flat_jobs)
-        ).components
+        target_models = assert_success_and_get_target_models(ComponentGroup(flat_jobs))
 
     # Build profile options; one entry per context graph so each gets its own profile job
     per_component_profile_options: dict[str, list[tuple[str, str | None]]] = {}
@@ -468,17 +463,16 @@ def export_model(
         )
 
     # 4. Inferences the model on sample inputs
-    inference_jobs: dict[str, hub.client.InferenceJob] = {}
+    inference_result: ComponentGroup[hub.client.InferenceJob] | None = None
     if not skip_inferencing:
-        inference_jobs = inference_model(
+        inference_result = inference_model(
             model.sample_inputs(
                 use_channel_last_format=target_runtime.channel_last_native_execution
             ),
             model_name,
             device,
-            per_component_inference_options,
+            ComponentGroup(per_component_inference_options),
             target_models,
-            components,
         )
 
     # 5. Extracts relevant tool (eg. SDK) versions used to compile and profile this model
@@ -491,7 +485,9 @@ def export_model(
         first_profile_job = (
             first_profile_jobs_list[0] if first_profile_jobs_list else None
         )
-        inference_job = next(iter(inference_jobs.values())) if inference_jobs else None
+        inference_job = (
+            next(iter(inference_result.values())) if inference_result else None
+        )
         first_compile_jobs = next(iter(compile_jobs.values()), [])
         compile_job = first_compile_jobs[0] if first_compile_jobs else None
         if first_profile_job is not None and first_profile_job.wait():
@@ -527,11 +523,11 @@ def export_model(
                 profile_data: dict[str, Any] = pj.download_profile()
                 print_profile_metrics_from_job(pj, profile_data)
 
-    if not skip_summary and not skip_inferencing:
+    if not skip_summary and not skip_inferencing and inference_result is not None:
         for component_name in components:
             component = model.components[component_name]
 
-            inference_job = inference_jobs[component_name]
+            ij = inference_result[component_name]
 
             # Skip torch inference comparison for components loaded from
             # quantized checkpoints (ONNX-only, no PyTorch forward).
@@ -549,11 +545,11 @@ def export_model(
                 )
                 continue
 
-            assert inference_job.wait().success, "Job failed: " + inference_job.url
-            inference_result = inference_job.download_output_data()
-            assert inference_result is not None
+            assert ij.wait().success, "Job failed: " + ij.url
+            ij_output = ij.download_output_data()
+            assert ij_output is not None
             print_inference_metrics(
-                inference_job, inference_result, torch_out, component.get_output_names()
+                ij, ij_output, torch_out, component.get_output_names()
             )
 
     if not skip_summary:
@@ -574,7 +570,9 @@ def export_model(
                 link_job=link_jobs.get(component_name)
                 if (target_runtime.uses_hub_link and link_jobs)
                 else None,
-                inference_job=inference_jobs.get(component_name, None),
+                inference_job=inference_result.get(component_name)
+                if inference_result
+                else None,
                 profile_job=profile_jobs.get(component_name, [None])[0],
             )
             for component_name in components

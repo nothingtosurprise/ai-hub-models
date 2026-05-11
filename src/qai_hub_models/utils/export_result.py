@@ -18,28 +18,30 @@ Used throughout the export pipeline to hold jobs, models, or other per-graph/per
 """
 
 
-@dataclass
-class MultiGraphGroup(Generic[ValT]):
+class MultiGraphGroup(dict[str, ValT]):
     """Groups a value per graph for a model with multiple input specs."""
 
-    graph_names: dict[str, ValT] = field(default_factory=dict)
 
-
-@dataclass
-class ComponentGroup(Generic[ValT]):
+class ComponentGroup(dict[str, ValT]):
     """Groups a value per component for a collection model."""
-
-    components: dict[str, ValT] = field(default_factory=dict)
 
 
 @dataclass
 class MultiGraphComponentGroup(Generic[ValT]):
-    """Groups a value per (component, graph) for a collection model with multi-graph components."""
+    """Groups a value per (component, graph_name) for a collection model with multi-graph components."""
 
     # graph_name is None for components that have a single input spec.
     component_graph_names: dict[tuple[str, str | None], ValT] = field(
         default_factory=dict
     )
+
+    def __getitem__(self, component_name: str) -> dict[str | None, ValT]:
+        """Return {graph_name: value} for entries matching the given component."""
+        return {
+            gn: v
+            for (comp, gn), v in self.component_graph_names.items()
+            if comp == component_name
+        }
 
 
 """

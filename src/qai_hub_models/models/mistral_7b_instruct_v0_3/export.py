@@ -51,8 +51,8 @@ def link_model(
     assert target_runtime.is_aot_compiled, (
         f"link_model() requires an AOT runtime, got {target_runtime}"
     )
-    link_jobs: dict[str, hub.client.LinkJob] = {}
-    for component_name, compiled_model in compiled_models.components.items():
+    link_jobs: ComponentGroup[hub.client.LinkJob] = ComponentGroup()
+    for component_name, compiled_model in compiled_models.items():
         component = model.components[component_name]
 
         link_options = component.get_hub_link_options(target_runtime, extra_options)
@@ -63,17 +63,17 @@ def link_model(
             name=f"{model_name}_{component_name}",
             options=link_options,
         )
-    return ComponentGroup(components=link_jobs)
+    return link_jobs
 
 
 def profile_model(
     model_name: str,
     device: hub.Device,
-    options: dict[str, str],
+    options: ComponentGroup[str],
     uploaded_models: dict[str, hub.Model],
     components: list[str] | None = None,
 ) -> ComponentGroup[hub.client.ProfileJob]:
-    profile_jobs: dict[str, hub.client.ProfileJob] = {}
+    profile_jobs: ComponentGroup[hub.client.ProfileJob] = ComponentGroup()
     for component_name in components or Model.component_class_names:
         print(f"Profiling model {component_name} on a hosted device.")
         submitted_profile_job = hub.submit_profile_job(
@@ -85,7 +85,7 @@ def profile_model(
         profile_jobs[component_name] = cast(
             hub.client.ProfileJob, submitted_profile_job
         )
-    return ComponentGroup(components=profile_jobs)
+    return profile_jobs
 
 
 def save_model(
@@ -247,9 +247,7 @@ def export_model(
     tool_versions_are_from_device_job = False
     if not skip_summary:
         profile_job = (
-            next(iter(profile_result.components.values()), None)
-            if profile_result
-            else None
+            next(iter(profile_result.values()), None) if profile_result else None
         )
         if profile_job is not None and profile_job.wait():
             tool_versions = ToolVersions.from_job(profile_job)
@@ -267,7 +265,7 @@ def export_model(
 
     # 6. Summarizes the results from profiling
     if not skip_summary and profile_result is not None:
-        for profile_job in profile_result.components.values():
+        for profile_job in profile_result.values():
             assert profile_job.wait().success, "Job failed: " + profile_job.url
             profile_data: dict[str, Any] = profile_job.download_profile()
             print_profile_metrics_from_job(profile_job, profile_data)

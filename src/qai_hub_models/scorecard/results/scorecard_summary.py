@@ -50,6 +50,7 @@ from qai_hub_models.scorecard.static.model_config import ScorecardModelConfig
 from qai_hub_models.scorecard.static.model_exec import (
     get_static_model_test_parameterizations,
 )
+from qai_hub_models.utils.export_result import ComponentGroup
 
 # Maximum acceptable inference time (milliseconds).
 # Above this inference time, a model will not be published.
@@ -294,7 +295,7 @@ class ModelTestConfig:
     model_id: str
     component_names: list[str] | None
     graph_names: list[str] | None
-    component_graph_names: dict[str, list[str]] | None
+    component_graph_names: ComponentGroup[list[str]] | None
 
     profile_tests: list[tuple[Precision, ScorecardProfilePath, ScorecardDevice]]
     inference_tests: list[tuple[Precision, ScorecardProfilePath, ScorecardDevice]]
@@ -305,7 +306,7 @@ class ModelTestConfig:
         model_info: QAIHMModelInfo,
         component_names: list[str] | None = None,
         graph_names: list[str] | None = None,
-        component_graph_names: dict[str, list[str]] | None = None,
+        component_graph_names: ComponentGroup[list[str]] | None = None,
     ) -> ModelTestConfig:
         """Load the test configuration for the given PyTorch recipe model."""
         model_id = model_info.id

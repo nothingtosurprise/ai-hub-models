@@ -245,7 +245,7 @@ class ScorecardJobYaml(ScorecardYamlFile[str], Generic[ScorecardJobTypeVar]):
                     ),
                 )
         elif isinstance(export_output, ComponentGroup):
-            for component, job in export_output.components.items():
+            for component, job in export_output.items():
                 self.set_job_id(
                     job.job_id,
                     ScJobParams(
@@ -258,7 +258,7 @@ class ScorecardJobYaml(ScorecardYamlFile[str], Generic[ScorecardJobTypeVar]):
                     ),
                 )
         elif isinstance(export_output, MultiGraphGroup):
-            for graph_name, job in export_output.graph_names.items():
+            for graph_name, job in export_output.items():
                 self.set_job_id(
                     job.job_id,
                     ScJobParams(
@@ -306,10 +306,13 @@ class ScorecardJobYaml(ScorecardYamlFile[str], Generic[ScorecardJobTypeVar]):
             raise_if_jobs_are_missing,
         )
         has_components = test_params.component_names is not None
-        has_graph_names = (
-            self.SCORECARD_JOB_TYPE.job_type not in {JobType.QUANTIZE, JobType.LINK}
-            and test_params.graph_names is not None
-        ) or test_params.component_graph_names is not None
+        has_graph_names = self.SCORECARD_JOB_TYPE.job_type not in {
+            JobType.QUANTIZE,
+            JobType.LINK,
+        } and (
+            test_params.graph_names is not None
+            or test_params.component_graph_names is not None
+        )
 
         if has_graph_names:
             if has_components:
@@ -329,7 +332,7 @@ class ScorecardJobYaml(ScorecardYamlFile[str], Generic[ScorecardJobTypeVar]):
                 )
                 if sc_job is not None:
                     out_gn[job_params.graph_name] = sc_job.job
-            return MultiGraphGroup(graph_names=out_gn)
+            return MultiGraphGroup(out_gn)
 
         if has_components:
             out_comp: dict[str, JobTypeVar] = {}
@@ -339,7 +342,7 @@ class ScorecardJobYaml(ScorecardYamlFile[str], Generic[ScorecardJobTypeVar]):
                 )
                 if sc_job is not None:
                     out_comp[job_params.component] = sc_job.job
-            return ComponentGroup(components=out_comp)
+            return ComponentGroup(out_comp)
 
         if len(all_jobs) == 0:
             return None
@@ -417,7 +420,7 @@ def get_model_component_and_graph_names(
     model_id: str,
     component_names_yaml: ComponentNamesYaml,
     graph_names_yaml: GraphNamesYaml,
-) -> tuple[list[str] | None, list[str] | None, dict[str, list[str]] | None]:
+) -> tuple[list[str] | None, list[str] | None, ComponentGroup[list[str]] | None]:
     """
     Extract component names, graph names, and component-graph-names mapping for a model.
 
@@ -436,19 +439,21 @@ def get_model_component_and_graph_names(
         List of component names, or None if this model has no components.
     graph_names : list[str] | None
         List of graph names for a single-component model, or None.
-    component_graph_names : dict[str, list[str]] | None
-        Mapping of component name to graph names for multi-component models, or None.
+    component_graph_names : ComponentGroup[list[str]] | None
+        Component-grouped graph names for multi-component models, or None.
     """
     component_names = component_names_yaml.get(model_id)
 
     graph_names: list[str] | None = None
-    component_graph_names: dict[str, list[str]] | None = None
+    component_graph_names: ComponentGroup[list[str]] | None = None
     if component_names is not None:
+        cgn: dict[str, list[str]] = {}
         for comp_name in component_names:
             gn = graph_names_yaml.get(model_id, comp_name)
             if gn is not None:
-                component_graph_names = component_graph_names or {}
-                component_graph_names[comp_name] = gn
+                cgn[comp_name] = gn
+        if cgn:
+            component_graph_names = ComponentGroup(cgn)
     else:
         graph_names = graph_names_yaml.get(model_id, model_id)
 

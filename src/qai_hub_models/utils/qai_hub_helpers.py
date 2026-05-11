@@ -488,28 +488,28 @@ def assert_success_and_get_target_models(  # type: ignore[misc]
         If any job failed and no target model is available.
     """
     if isinstance(jobs, MultiGraphComponentGroup):
-        result_components: dict[tuple[str, str | None], hub.Model] = {}
+        out_mgcg: MultiGraphComponentGroup[hub.Model] = MultiGraphComponentGroup()
         for (comp, gn), job in jobs.component_graph_names.items():
             target_model = job.get_target_model()
             assert target_model is not None, f"Job failed for {comp}/{gn}: {job.url}"
-            result_components[(comp, gn)] = target_model
-        return MultiGraphComponentGroup(component_graph_names=result_components)
+            out_mgcg.component_graph_names[(comp, gn)] = target_model
+        return out_mgcg
 
     if isinstance(jobs, ComponentGroup):
-        target_models_dict: dict[str, hub.Model] = {}
-        for name, job in jobs.components.items():
+        out_comp: ComponentGroup[hub.Model] = ComponentGroup()
+        for name, job in jobs.items():
             target_model = job.get_target_model()
             assert target_model is not None, f"Job failed for {name}: {job.url}"
-            target_models_dict[name] = target_model
-        return ComponentGroup(components=target_models_dict)
+            out_comp[name] = target_model
+        return out_comp
 
     if isinstance(jobs, MultiGraphGroup):
-        graph_models: dict[str, hub.Model] = {}
-        for name, job in jobs.graph_names.items():
+        graph_models: MultiGraphGroup[hub.Model] = MultiGraphGroup()
+        for name, job in jobs.items():
             target_model = job.get_target_model()
             assert target_model is not None, f"Job failed for {name}: {job.url}"
             graph_models[name] = target_model
-        return MultiGraphGroup(graph_names=graph_models)
+        return graph_models
 
     target_model = jobs.get_target_model()
     assert target_model is not None, f"Job failed: {jobs.url}"

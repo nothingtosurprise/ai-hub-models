@@ -175,7 +175,7 @@ def main() -> None:
                             for (
                                 component_name,
                                 compile_job,
-                            ) in results.compile_jobs.components.items():
+                            ) in results.compile_jobs.items():
                                 details[str(precision)][component_name] = (
                                     get_model_size_and_parameters(compile_job)
                                 )
