@@ -108,19 +108,19 @@ def main() -> int:
 
     try:
         regressions = load_yaml_safe(
-            args.results_dir / f"dev-regressions-{job_yaml_tag}.yaml",
+            args.results_dir / f"dev-regressions__{job_yaml_tag}.yaml",
             return_empty_on_not_found=True,
         )
         progressions = load_yaml_safe(
-            args.results_dir / f"dev-progressions-{job_yaml_tag}.yaml",
+            args.results_dir / f"dev-progressions__{job_yaml_tag}.yaml",
             return_empty_on_not_found=True,
         )
         failures = load_yaml_safe(
-            args.results_dir / f"failures-dev-and-prod-{job_yaml_tag}.yaml",
+            args.results_dir / f"failures-dev-and-prod__{job_yaml_tag}.yaml",
             return_empty_on_not_found=True,
         )
         passed = load_yaml_safe(
-            args.results_dir / f"passed-dev-and-prod-{job_yaml_tag}.yaml",
+            args.results_dir / f"passed-dev-and-prod__{job_yaml_tag}.yaml",
             return_empty_on_not_found=True,
         )
 

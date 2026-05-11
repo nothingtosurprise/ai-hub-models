@@ -121,19 +121,24 @@ def get_aihw_compiler_nightly_project() -> str:
 
 
 def strip_device_suffix(model_name: str) -> str:
-    """Strip device suffix from model name.
+    """Strip device suffix from model name, preserving component suffix.
 
     Examples
     --------
         "model_name-cs_8_gen_3" -> "model_name"
+        "model_name-cs_8_gen_3_encoder_1" -> "model_name_encoder_1"
         "model_name-samsung_s24" -> "model_name"
+        "model_name-samsung_s24_decoder" -> "model_name_decoder"
         "model_name" -> "model_name"
     """
-    for pattern in DEVICE_PATTERNS:
-        if f"-{pattern}" in model_name:
-            parts = model_name.rsplit("-", 1)
-            if len(parts) == 2 and parts[1].startswith(pattern):
-                return parts[0]
+    # Match: base-device_suffix_component_suffix
+    # Device patterns: cs_\d+(_gen_\d+|_elite|_elite_gen_\d+)? or samsung_\w+
+    device_regex = r"^(.+)-(cs_\d+(?:_gen_\d+|_elite(?:_gen_\d+)?)?|samsung_\w+)(_.+)?$"
+    match = re.match(device_regex, model_name)
+    if match:
+        base = match.group(1)
+        component = match.group(3) or ""
+        return base + component
     return model_name
 
 

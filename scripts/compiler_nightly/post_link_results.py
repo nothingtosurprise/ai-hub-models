@@ -17,7 +17,6 @@ from utils import (
     extract_tag_and_dir_from_yaml,
     load_yaml_safe,
     log_and_print,
-    map_prod_by_model,
     print_results_table,
     save_results_csv,
     setup_script_logging,
@@ -27,12 +26,15 @@ logger = logging.getLogger(__name__)
 
 
 def calculate_status_changes(prod_config: dict, dev_config: dict) -> dict:
-    prod_by_model = map_prod_by_model(prod_config)
-
     status_changes = {}
 
     for model_name, dev_info in dev_config.items():
-        prod_info = prod_by_model.get(model_name, {})
+        # Direct key lookup - no device suffix stripping needed
+        prod_info = prod_config.get(model_name, {})
+
+        # Skip if no prod baseline exists
+        if not prod_info:
+            continue
 
         prod_success = prod_info.get("prod_job_status") == JOB_STATUS_SUCCESS
         dev_success = dev_info.get("link_status") == JOB_STATUS_SUCCESS
