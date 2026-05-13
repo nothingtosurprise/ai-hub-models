@@ -1,0 +1,31 @@
+name: NAFNet-DeNoise
+id: nafnet_denoise
+status: pending
+status_reason: animated and static banner are not available
+headline: Denoise images in real time.
+domain: Computer Vision
+description: NAFNET is designed for lightweight real-time denoising of images.
+use_case: Image Editing
+tags: []
+applicable_scenarios:
+- Virtual Real Estate Tours
+- Gaming
+- ARVR
+related_models: [nafnet_deblur, nafssr]
+form_factors:
+- Phone
+- Tablet
+has_static_banner: false
+has_animated_banner: false
+dataset: []
+technical_details:
+  Model checkpoint: NAFNet-SIDD-width64
+  Input resolution: 256x256
+  Number of parameters: 115.98M
+  Model size (float): 463.93 MB
+license_type: mit
+research_paper: https://arxiv.org/abs/2204.04676
+research_paper_title: Simple Baselines for Image Restoration
+source_repo: https://github.com/megvii-research/NAFNet.git
+license: https://github.com/megvii-research/NAFNet/blob/main/LICENSE
+imsdk_supported: true

@@ -11,14 +11,17 @@ from qai_hub_models.datasets.cityscapes import CityscapesDataset
 from qai_hub_models.datasets.face_attrib_dataset import FaceAttribDataset
 from qai_hub_models.datasets.face_det_lite import FaceDetLiteDataset
 from qai_hub_models.datasets.facemap_3dmm_dataset import FaceMap3DMMDataset
+from qai_hub_models.datasets.flickr1024 import Flickr1024Dataset
 from qai_hub_models.datasets.foot_track_dataset import FootTrackDataset
 from qai_hub_models.datasets.gear_guard_dataset import GearGuardDataset
 from qai_hub_models.datasets.human_faces import HumanFacesDataset
 from qai_hub_models.datasets.kitti import KittiDataset
 from qai_hub_models.datasets.nuscenes import NuscenesDataset
 from qai_hub_models.datasets.nyuv2 import NyUv2Dataset
+from qai_hub_models.datasets.reds import REDSDataset
 from qai_hub_models.datasets.sav import SaVDataset
 from qai_hub_models.datasets.semantic_kitti import SemanticKittiDataset
+from qai_hub_models.datasets.sidd import SIDDDataset
 
 SUPPORTED_DATASETS = [
     "nyuv2",
@@ -35,6 +38,9 @@ SUPPORTED_DATASETS = [
     "semantic_kitti",
     "kitti",
     "sav",
+    "sidd",
+    "reds",
+    "flickr1024",
 ]
 
 
@@ -94,6 +100,12 @@ def configure_dataset(dataset: str, files: list[str]) -> None:
         )
     elif dataset == "sav":
         SaVDataset(input_tar=files[0])
+    elif dataset == "sidd":
+        SIDDDataset(input_data_zip=files[0])
+    elif dataset == "reds":
+        REDSDataset(input_data_zip=files[0])
+    elif dataset == "flickr1024":
+        Flickr1024Dataset(input_data_zip=files[0])
     else:
         raise ValueError(f"Invalid dataset {dataset}")
 

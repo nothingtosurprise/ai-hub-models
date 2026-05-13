@@ -1,0 +1,31 @@
+name: NAFNet-DeBlur
+id: nafnet_deblur
+status: pending
+status_reason: animated and static banner are not available
+headline: Deblur images in real time.
+domain: Computer Vision
+description: NAFNET is designed for lightweight real-time deblurring of images.
+use_case: Image Editing
+tags: []
+applicable_scenarios:
+- Virtual Real Estate Tours
+- Gaming
+- ARVR
+related_models: [nafnet_denoise, nafssr]
+form_factors:
+- Phone
+- Tablet
+has_static_banner: false
+has_animated_banner: false
+dataset: []
+technical_details:
+  Model checkpoint: NAFNet-REDS-width64
+  Input resolution: 360x640
+  Number of parameters: 67.89M
+  Model size (float): 271.55 MB
+license_type: mit
+research_paper: https://arxiv.org/abs/2204.04676
+research_paper_title: Simple Baselines for Image Restoration
+source_repo: https://github.com/megvii-research/NAFNet.git
+license: https://github.com/megvii-research/NAFNet/blob/main/LICENSE
+imsdk_supported: true

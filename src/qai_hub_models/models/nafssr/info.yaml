@@ -1,0 +1,31 @@
+name: NAFSSR
+id: nafssr
+status: pending
+status_reason: animated and static banner are not available
+headline: Upscale images in real time using stereo technique.
+domain: Computer Vision
+description: NAFNET is designed for lightweight real-time upscaling of images.
+use_case: Super Resolution
+tags: []
+applicable_scenarios:
+- Virtual Real Estate Tours
+- Gaming
+- ARVR
+related_models: [nafnet_denoise, nafnet_deblur]
+form_factors:
+- Phone
+- Tablet
+has_static_banner: false
+has_animated_banner: false
+dataset: []
+technical_details:
+  Model checkpoint: NAFSSR-S_2x
+  Input resolution: 128x128
+  Number of parameters: 1.54M
+  Model size (float): 6.2 MB
+license_type: mit
+research_paper: https://arxiv.org/abs/2204.08714
+research_paper_title: 'NAFSSR: Stereo Image Super-Resolution Using NAFNet'
+source_repo: https://github.com/megvii-research/NAFNet.git
+license: https://github.com/megvii-research/NAFNet/blob/main/LICENSE
+imsdk_supported: true
