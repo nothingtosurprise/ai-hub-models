@@ -851,35 +851,36 @@ def run_llm_compile(
         component_names=component_names,
     )
 
-    result = cast(
-        LegacyCollectionExportResult,
-        export_model(
-            device=device.execution_device,
-            precision=precision,
-            skip_downloading=skip_downloading,
-            skip_profiling=True,
-            skip_inferencing=True,
-            skip_summary=True,
-            compile_options=(
-                scorecard_path.get_compile_options() if not skip_compile_options else ""
-            ),
-            target_runtime=scorecard_path.runtime,
-            **extra_model_arguments or {},
+    result = export_model(
+        device=device.execution_device,
+        precision=precision,
+        skip_downloading=skip_downloading,
+        skip_profiling=True,
+        skip_inferencing=True,
+        skip_summary=True,
+        compile_options=(
+            scorecard_path.get_compile_options() if not skip_compile_options else ""
         ),
+        target_runtime=scorecard_path.runtime,
+        **extra_model_arguments or {},
     )
 
     # Verify success or cache job IDs to a file.
     cache = CompileScorecardJobYaml.from_test_artifacts()
-    cache.update_from_export_output(
-        ComponentGroup(
-            {
-                name: er.compile_job
-                for name, er in result.components.items()
-                if er.compile_job is not None
-            }
-        ),
-        test_params,
-    )
+    if isinstance(result, MultiGraphCollectionExportResult):
+        cache.update_from_export_output(result.compile_jobs, test_params)
+    else:
+        result = cast(LegacyCollectionExportResult, result)
+        cache.update_from_export_output(
+            ComponentGroup(
+                {
+                    name: er.compile_job
+                    for name, er in result.components.items()
+                    if er.compile_job is not None
+                }
+            ),
+            test_params,
+        )
     cache.to_file()
 
 
@@ -1221,6 +1222,12 @@ def export_test_e2e(
             torch.jit,
             "trace",
             mock.MagicMock(return_value=None),
+        )
+    )
+    mocks.append(
+        mock.patch(
+            "qai_hub.upload_model",
+            mock.MagicMock(return_value=mock.MagicMock(spec=hub.Model)),
         )
     )
     if issubclass(

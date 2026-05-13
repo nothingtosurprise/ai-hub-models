@@ -175,6 +175,11 @@ class QAIHMModelCodeGen(BaseQAIHMConfig):
     # that do NOT set this flag get the simple single-compile-job path.
     has_multi_graph: bool = False
 
+    # If set, the model has a separate quantize.py script. The --precision
+    # option is omitted from export.py and precision is determined from
+    # the checkpoint (via args.json or DEFAULT_* sentinel).
+    separate_quantize_script: bool = False
+
     # llama.cpp commands for running the model on different runtimes
     llama_cpp_cpu_command: str | None = None
     llama_cpp_gpu_command: str | None = None

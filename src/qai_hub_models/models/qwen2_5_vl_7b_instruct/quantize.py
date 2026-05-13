@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import argparse
 import gc
+import sys
+from pathlib import Path
 
 import torch
 
@@ -13,7 +15,7 @@ from qai_hub_models.models._shared.llm.model import (
     DEFAULT_CALIBRATION_SEQ_LEN,
     DEFAULT_CONTEXT_LENGTH,
 )
-from qai_hub_models.models._shared.llm.quantize import quantize
+from qai_hub_models.models._shared.llm.quantize import quantize, save_command_args
 from qai_hub_models.models.common import Precision
 from qai_hub_models.models.qwen2_5_vl_7b_instruct.model import (
     DEFAULT_IMAGE_HEIGHT,
@@ -176,7 +178,8 @@ def main() -> None:
         help="Number of calibration samples for VEG quantization.",
     )
 
-    args = parser.parse_args()
+    cli_args = sys.argv[1:]
+    args = parser.parse_args(cli_args)
 
     # Pass 1: LLM text model
     if not args.skip_llm:
@@ -215,6 +218,8 @@ def main() -> None:
         )
     else:
         print("Skipping Pass 2 (VEG) as requested.")
+
+    save_command_args(Path(args.output_dir) / "args.json", args, cli_args)
 
     print()
     print("All quantization passes completed.")

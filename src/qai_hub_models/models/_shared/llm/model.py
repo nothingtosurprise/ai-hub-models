@@ -539,7 +539,7 @@ class SingleSlotCacheMixin:
         cleanup()
 
 
-class PreSplitOnnxMixin:
+class DynamicPreSplitOnnxMixin:
     """Mixin that manages ONNX splitting for PreSplit models.
 
     Provides a cached convert_to_onnx_and_split() workflow using
@@ -620,24 +620,24 @@ class PreSplitOnnxMixin:
         This works for quantized PreSplit models whose checkpoint already
         contains these files (checkpoint must be resolved before calling).
 
-        FP PreSplit models should override this to export from PyTorch
-        via get_onnx_model().
+        If the checkpoint is not a local directory with model_dynamic.onnx,
+        delegates to super() (e.g. Llama3DynamicBase which exports from
+        PyTorch).
         """
-        bundle_dir = temp_path / "bundle_dynamic"
-        bundle_dir.mkdir(parents=True, exist_ok=True)
-
         checkpoint = getattr(self, "checkpoint", None)
         if checkpoint is None or (
             isinstance(checkpoint, str) and checkpoint.startswith("DEFAULT")
         ):
-            raise NotImplementedError(
-                f"{type(self).__name__}: checkpoint must be resolved to a "
-                "local path before calling get_full_onnx_bundle(). "
-                "Got: {checkpoint!r}"
-            )
-        checkpoint_path = Path(checkpoint)
+            return super().get_full_onnx_bundle(temp_path)  # type: ignore[misc]
 
+        checkpoint_path = Path(checkpoint)
         src_onnx = checkpoint_path / "model_dynamic.onnx"
+        if not src_onnx.exists():
+            return super().get_full_onnx_bundle(temp_path)  # type: ignore[misc]
+
+        bundle_dir = temp_path / "bundle_dynamic"
+        bundle_dir.mkdir(parents=True, exist_ok=True)
+
         shutil.copy(src_onnx, bundle_dir / "model.onnx")
 
         src_data = checkpoint_path / "model.data"
@@ -686,37 +686,30 @@ class PreSplitOnnxMixin:
         cleanup()
 
 
-class QuantizablePreSplitMixin(
-    SingleSlotCacheMixin, PreSplitOnnxMixin, Generic[FPModelT]
+class DynamicQuantizablePreSplitMixin(
+    SingleSlotCacheMixin, DynamicPreSplitOnnxMixin, Generic[FPModelT]
 ):
-    """Mixin for quantized PreSplit models with cached from_pretrained.
+    """Mixin for quantized PreSplit models with dynamic ONNX shapes.
 
-    Combines SingleSlotCacheMixin (class-level cache) and PreSplitOnnxMixin
-    (ONNX splitting) with generic DEFAULT-checkpoint resolution and
-    save_calibrated_checkpoint for dynamic shapes.
+    Combines SingleSlotCacheMixin (class-level cache) and DynamicPreSplitOnnxMixin
+    (ONNX splitting) with DEFAULT-checkpoint resolution and
+    save_calibrated_checkpoint.
 
     Must be mixed with a subclass of LLM_AIMETOnnx which provides
     FPModel, create_onnx_models, save_tokenizer_and_config,
     from_pretrained, and save_calibrated_checkpoint.
 
-    Subclasses must set these class attributes:
-        model_id: str               -- e.g. "llama_v3_2_1b_instruct2"
-        model_asset_version: int    -- asset store version
-        default_checkpoint: dict[Precision, str]  -- precision -> asset key
-        supported_precisions: list[Precision]
-        default_precision: Precision
-
     Override ``resolve_default_checkpoint`` to change how DEFAULT
-    checkpoints are fetched. The default downloads a full .zip archive.
+    checkpoints are fetched. The default downloads and extracts a full
+    .zip archive (dynamic ONNX + encodings + weights + tokenizer + config).
     """
 
-    model_id: str = ""
-    model_asset_version: int = 0
-    default_checkpoint: dict[Precision, str] = {}
-    supported_precisions: list[Precision] = []
-    default_precision: Precision = Precision.w4
-
-    # Declared for type-checking; provided by LLM_AIMETOnnx at runtime.
+    # Declared for type-checking; provided by LLMDynamicBase / LLMDynamic_AIMETOnnx at runtime.
+    model_id: str
+    model_asset_version: int
+    default_checkpoint: dict[Precision, str]
+    supported_precisions: list[Precision]
+    default_precision: Precision
     FPModel: type[FPModelT]
     sequence_length: int
     context_length: int
@@ -734,16 +727,14 @@ class QuantizablePreSplitMixin(
     def resolve_default_checkpoint(
         cls,
         precision: Precision,
-        sequence_length: int,
-        context_length: int,
         host_device: torch.device,
         fp_model: FPModelT | None,
     ) -> tuple[str, FPModelT | None]:
         """Resolve a DEFAULT checkpoint string to a local directory path.
 
-        Downloads the checkpoint assets and ensures the checkpoint directory
-        contains the ONNX model, external data, and tokenizer/config files
-        needed by LLM_AIMETOnnx.from_pretrained.
+        Downloads and extracts the full .zip archive. Override in subclasses
+        for different strategies (e.g. downloading only encodings and
+        exporting ONNX from the FP torch model).
 
         The default implementation downloads a full .zip archive that
         contains ONNX + encodings + data. If ``fp_model`` is provided,
@@ -756,10 +747,6 @@ class QuantizablePreSplitMixin(
         ----------
         precision
             Quantization precision (already validated).
-        sequence_length
-            Sequence length for the model.
-        context_length
-            Context length for the model.
         host_device
             Device for computation.
         fp_model
@@ -771,39 +758,31 @@ class QuantizablePreSplitMixin(
             (resolved_checkpoint_path, fp_model). The fp_model may be
             the same as input or a newly created one.
         """
+        return cls.fetch_default_checkpoint(precision), fp_model
+
+    @classmethod
+    def fetch_default_checkpoint(cls, precision: Precision) -> str:
+        """Download and extract the DEFAULT asset zip for *precision*.
+
+        Returns the local path to the extracted checkpoint directory.
+        """
         precision_checkpoint = cls.default_checkpoint[precision]
-        checkpoint = str(
+        return str(
             CachedWebModelAsset.from_asset_store(
                 cls.model_id,
                 cls.model_asset_version,
                 precision_checkpoint + ".zip",
             ).fetch(extract=True)
         )
-        if fp_model is not None:
-            cls.create_onnx_models(  # type: ignore[attr-defined]
-                checkpoint=checkpoint,
-                fp_model=fp_model,
-                context_length=context_length,
-                export_sequence_lengths=[sequence_length],
-                host_device=host_device,
-                llm_io_type=fp_model.llm_io_type,
-            )
-            cls.save_tokenizer_and_config(  # type: ignore[attr-defined]
-                checkpoint=checkpoint, fp_model=fp_model
-            )
-        return checkpoint, fp_model
 
     @classmethod
     def from_pretrained(
         cls,
         checkpoint: str | os.PathLike | Path = "DEFAULT",
         host_device: torch.device | None = None,
-        sequence_length: int = DEFAULT_SEQUENCE_LENGTH,
-        context_length: int = DEFAULT_CONTEXT_LENGTH,
         precision: Precision | None = None,
         fp_model: FPModelT | None = None,
-        _skip_quantsim_creation: bool = True,
-        use_dynamic_shapes: bool = True,
+        _skip_quantsim_creation: bool = False,
     ) -> Self:
         """
         Load or return a cached Quantizable PreSplit.
@@ -819,10 +798,6 @@ class QuantizablePreSplitMixin(
             to fetch from the asset store.
         host_device
             Device for computation.
-        sequence_length
-            Sequence length for the model.
-        context_length
-            Context length for the model.
         precision
             Quantization precision. Defaults to ``cls.default_precision``.
         fp_model
@@ -831,8 +806,6 @@ class QuantizablePreSplitMixin(
             with ``"DEFAULT"``, one is created automatically.
         _skip_quantsim_creation
             Skip QuantSim creation (for testing).
-        use_dynamic_shapes
-            Whether to export with dynamic sequence/context dimensions.
 
         Returns
         -------
@@ -845,8 +818,6 @@ class QuantizablePreSplitMixin(
         cache_key = str(checkpoint)
         cached = cls.cache_lookup(cache_key)
         if cached is not None:
-            cached.sequence_length = sequence_length
-            cached.context_length = context_length
             return cached
 
         if host_device is None:
@@ -869,8 +840,6 @@ class QuantizablePreSplitMixin(
                 )
             checkpoint, fp_model = cls.resolve_default_checkpoint(
                 precision=precision,
-                sequence_length=sequence_length,
-                context_length=context_length,
                 host_device=host_device,
                 fp_model=fp_model,
             )
@@ -878,15 +847,11 @@ class QuantizablePreSplitMixin(
         instance = super().from_pretrained(  # type: ignore[misc]
             checkpoint=checkpoint,
             host_device=host_device,
-            sequence_length=sequence_length,
-            context_length=context_length,
             precision=precision,
             fp_model=fp_model,
             _skip_quantsim_creation=_skip_quantsim_creation,
-            use_dynamic_shapes=use_dynamic_shapes,
         )
 
-        # Store precision on instance
         instance.precision = precision
 
         cls.cache_store(instance, cache_key)
@@ -897,98 +862,16 @@ class QuantizablePreSplitMixin(
         output_checkpoint: str | os.PathLike | Path,
         fp_model: FPModelT | None = None,
     ) -> None:
-        """Save calibrated checkpoint with dynamic shapes.
-
-        PreSplit models always use dynamic shapes. If ``fp_model`` is not
-        provided, one is automatically created from ``self.FPModel``.
-        """
+        """Save calibrated checkpoint with dynamic shapes."""
         if fp_model is None:
-            fp_model = self.FPModel.from_pretrained(
-                sequence_length=self.sequence_length,
-                context_length=self.context_length,
-            )
+            fp_model = self.FPModel.from_pretrained()
         super().save_calibrated_checkpoint(  # type: ignore[misc]
-            output_checkpoint, fp_model, use_dynamic_shapes=True
-        )
-
-
-class DynamicQuantizablePreSplitMixin(QuantizablePreSplitMixin[FPModelT]):
-    """Dynamic-ONNX QuantizablePreSplit for self-contained checkpoints.
-
-    For models whose S3 asset zip contains the FULL output directory of
-    quantize.py (dynamic ONNX + external weights + encodings + tokenizer +
-    config + any supplementary files). Downloading DEFAULT is equivalent
-    to passing the quantize.py output directory as ``--checkpoint``.
-
-    Override of ``resolve_default_checkpoint`` only downloads and extracts
-    the zip — it does not re-export ONNX or regenerate tokenizer/config,
-    because those are already shipped in the asset. No FP torch model is
-    needed to resolve the checkpoint.
-
-    This is the preferred base for new dynamic-style quantized models.
-    Llama uses :class:`LlamaQuantizablePreSplitMixin` instead, which
-    downloads only encodings (weights cannot be redistributed) and
-    exports ONNX locally from the FP torch model.
-    """
-
-    @classmethod
-    def fetch_default_checkpoint(cls, precision: Precision) -> str:
-        """Download and extract the DEFAULT asset zip for *precision*.
-
-        Returns the local path to the extracted checkpoint directory.
-        """
-        precision_checkpoint = cls.default_checkpoint[precision]
-        return str(
-            CachedWebModelAsset.from_asset_store(
-                cls.model_id,
-                cls.model_asset_version,
-                precision_checkpoint + ".zip",
-            ).fetch(extract=True)
-        )
-
-    @classmethod
-    def resolve_default_checkpoint(
-        cls,
-        precision: Precision,
-        sequence_length: int,
-        context_length: int,
-        host_device: torch.device,
-        fp_model: FPModelT | None,
-    ) -> tuple[str, FPModelT | None]:
-        return cls.fetch_default_checkpoint(precision), fp_model
-
-    @classmethod
-    def from_pretrained(
-        cls,
-        checkpoint: str | os.PathLike | Path = "DEFAULT",
-        host_device: torch.device | None = None,
-        sequence_length: int = DEFAULT_SEQUENCE_LENGTH,
-        context_length: int = DEFAULT_CONTEXT_LENGTH,
-        precision: Precision | None = None,
-        fp_model: FPModelT | None = None,
-        _skip_quantsim_creation: bool = False,
-    ) -> Self:
-        # Self-contained checkpoints ship dynamic ONNX + encodings, so
-        # building QuantSim needs no FP torch model. Default to building
-        # it so the presplit can run forward() directly (demo/eval).
-        # Callers that only need ONNX splitting (export, compile) still
-        # pass _skip_quantsim_creation=True explicitly.
-        return super().from_pretrained(
-            checkpoint=checkpoint,
-            host_device=host_device,
-            sequence_length=sequence_length,
-            context_length=context_length,
-            precision=precision,
-            fp_model=fp_model,
-            _skip_quantsim_creation=_skip_quantsim_creation,
+            output_checkpoint,
+            fp_model,
+            use_dynamic_shapes=True,
         )
 
     def release(self) -> None:
-        # No-op: this is a singleton via SingleSlotCacheMixin, and the same
-        # QuantSim is reused across sequence lengths. LLM_Generator calls
-        # release() when switching seqlens (prompt -> token), which would
-        # otherwise tear down the shared QuantSim before the next load()
-        # hits the cache. Actual teardown happens via clear_cache().
         pass
 
 
@@ -1850,10 +1733,8 @@ class LLM_AIMETOnnx(AIMETOnnxQuantizableMixin, LLMConfigEditor, BaseModel, ABC):
             cls.attention_mask_min_clip_and_multiplier(precision)
         )
 
-        return cls(
+        init_kwargs: dict[str, Any] = dict(
             quant_sim=quant_sim,
-            sequence_length=sequence_length,
-            context_length=context_length,
             host_device=host_device,
             checkpoint=checkpoint,
             tokenizer=_fp_tokenizer,
@@ -1861,6 +1742,11 @@ class LLM_AIMETOnnx(AIMETOnnxQuantizableMixin, LLMConfigEditor, BaseModel, ABC):
             attention_mask_min_clip=attention_mask_min_clip,
             attention_mask_multiplier=attention_mask_multiplier,
         )
+        if not issubclass(cls, LLMDynamic_AIMETOnnx):
+            init_kwargs["sequence_length"] = sequence_length
+            init_kwargs["context_length"] = context_length
+
+        return cls(**init_kwargs)
 
     @classmethod
     def attention_mask_min_clip_and_multiplier(
@@ -2814,3 +2700,95 @@ class LLM_QNN(LLMConfigEditor, BaseModel, ABC):
 
     def convert_input_ids_to_embeddings(self, input_ids: torch.Tensor) -> torch.Tensor:
         return self._get_embedding_table()(input_ids)
+
+
+class LLMDynamicBase(LLMBase):
+    """LLMBase variant for dynamic-shape models.
+
+    Dynamic models accept any sequence/context length at runtime, so these
+    are not part of the construction or from_pretrained API. Shapes flow
+    through get_input_spec, which controls what static shapes get compiled.
+
+    Internally, the parent LLMBase.__init__ requires sequence_length and
+    context_length (used for EmbeddingClass and stored as attributes).
+    This subclass supplies hardcoded defaults so callers never see them.
+    """
+
+    # Asset store identification (set by concrete model classes)
+    model_id: str
+    model_asset_version: int
+    default_checkpoint: dict[Precision, str]
+    default_precision: Precision
+
+    def __init__(
+        self,
+        checkpoint: str | os.PathLike | Path,
+        is_token_generator: bool = False,
+        load_pretrained: bool = True,
+        host_device: torch.device | None = None,
+        attention_mask_min_clip: float | None = None,
+        attention_mask_multiplier: float = 1.0,
+        _skip_optimizations: list[str] | None = None,
+    ) -> None:
+        super().__init__(
+            checkpoint=checkpoint,
+            sequence_length=DEFAULT_SEQUENCE_LENGTH,
+            context_length=DEFAULT_CONTEXT_LENGTH,
+            is_token_generator=is_token_generator,
+            load_pretrained=load_pretrained,
+            host_device=host_device,
+            attention_mask_min_clip=attention_mask_min_clip,
+            attention_mask_multiplier=attention_mask_multiplier,
+            _skip_optimizations=_skip_optimizations,
+        )
+
+
+class LLMDynamic_AIMETOnnx(LLM_AIMETOnnx):
+    """LLM_AIMETOnnx variant for dynamic-shape models.
+
+    See LLMDynamicBase for rationale.
+    """
+
+    def __init__(
+        self,
+        quant_sim: QuantizationSimModel | None,
+        checkpoint: str | os.PathLike | Path | None,
+        tokenizer: PreTrainedTokenizerBase | None = None,
+        llm_config: PretrainedConfig | None = None,
+        host_device: torch.device | None = None,
+        attention_mask_min_clip: float | None = None,
+        attention_mask_multiplier: float = 1.0,
+    ) -> None:
+        super().__init__(
+            quant_sim=quant_sim,
+            checkpoint=checkpoint,
+            sequence_length=DEFAULT_SEQUENCE_LENGTH,
+            context_length=DEFAULT_CONTEXT_LENGTH,
+            tokenizer=tokenizer,
+            llm_config=llm_config,
+            host_device=host_device,
+            attention_mask_min_clip=attention_mask_min_clip,
+            attention_mask_multiplier=attention_mask_multiplier,
+        )
+
+    @classmethod
+    def from_pretrained(
+        cls,
+        host_device: torch.device | None = None,
+        precision: Precision = Precision.w4,
+        fp_model: LLMBase | None = None,
+        checkpoint: str | os.PathLike | Path | None = None,
+        _skip_quantsim_creation: bool = False,
+    ) -> Self:
+        if host_device is None:
+            host_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        return super().from_pretrained(
+            host_device=host_device,
+            sequence_length=DEFAULT_SEQUENCE_LENGTH,
+            context_length=DEFAULT_CONTEXT_LENGTH,
+            precision=precision,
+            fp_model=fp_model,
+            checkpoint=checkpoint,
+            _skip_quantsim_creation=_skip_quantsim_creation,
+            use_dynamic_shapes=True,
+        )

@@ -13,10 +13,11 @@ from qai_hub_models.models._shared.llm.model import (
     LLM_QNN,
     LLM_AIMETOnnx,
     LLMBase,
+    LLMDynamicBase,
     get_tokenizer,
 )
 from qai_hub_models.models.common import Precision
-from qai_hub_models.utils.args import get_model_cli_parser
+from qai_hub_models.utils.args import add_input_spec_args, get_model_cli_parser
 from qai_hub_models.utils.checkpoint import (
     CheckpointSpec,
     CheckpointType,
@@ -51,6 +52,7 @@ def llm_chat_demo(
         model_cls,
         suppress_help_arguments=["--host-device", "--fp-model", "--precision"],
     )
+    parser = add_input_spec_args(model_cls, parser)
     parser.add_argument(
         "--prompt",
         type=str,
@@ -202,10 +204,11 @@ def llm_chat_demo(
 
     elif checkpoint_type.is_aimet_onnx():
         if is_default and checkpoint != "DEFAULT_UNQUANTIZED":
-            extra["fp_model"] = fp_model_cls.from_pretrained(
-                sequence_length=args.sequence_length,
-                context_length=args.context_length,
-            )
+            fp_kwargs: dict[str, Any] = {}
+            if not issubclass(fp_model_cls, LLMDynamicBase):
+                fp_kwargs["sequence_length"] = args.sequence_length
+                fp_kwargs["context_length"] = args.context_length
+            extra["fp_model"] = fp_model_cls.from_pretrained(**fp_kwargs)
         final_model_cls = model_cls
     else:
         final_model_cls = fp_model_cls

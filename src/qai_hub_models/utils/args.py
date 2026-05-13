@@ -34,6 +34,7 @@ from qai_hub_models.utils.base_model import (
     CollectionModel,
     HubModel,
     TargetRuntime,
+    _get_input_spec_params,
 )
 from qai_hub_models.utils.envvars import DevModeEnvvar
 from qai_hub_models.utils.evaluate import EvalMode
@@ -677,6 +678,18 @@ def get_model_cli_parser(
     return parser
 
 
+def add_input_spec_args(
+    cls: type[FromPretrainedTypeVar],
+    parser: QAIHMArgumentParser,
+) -> QAIHMArgumentParser:
+    """Adds arguments from get_input_spec."""
+    if issubclass(cls, BaseModel):
+        parser = get_model_input_spec_parser(cls, parser)
+    elif issubclass(cls, CollectionModel):
+        parser = get_collection_model_input_spec_parser(cls, parser)
+    return parser
+
+
 def get_model_kwargs(
     model_cls: type[FromPretrainedTypeVar], args_dict: Mapping[str, Any]
 ) -> Mapping[str, Any]:
@@ -696,7 +709,7 @@ def get_model_kwargs(
 def get_export_model_name(
     model_cls: type[FromPretrainedTypeVar],
     model_id: str,
-    precision: Precision,
+    precision: Precision | None,
     model_kwargs: Mapping[str, Any],
 ) -> str:
     """
@@ -706,7 +719,9 @@ def get_export_model_name(
     """
     sig = inspect.signature(model_cls.from_pretrained, eval_str=True)
 
-    name = f"{model_id}_{precision}"
+    name = model_id
+    if precision is not None:
+        name += f"_{precision}"
     for key, value in sig.parameters.items():
         # Check for a simple string type.
         anno = value.annotation
@@ -864,25 +879,16 @@ def get_input_spec_kwargs(
     return input_spec_kwargs
 
 
-def _get_input_spec_params(
-    model_cls: type[BaseModel | BasePrecompiledModel],
-) -> dict[str, inspect.Parameter]:
-    """Return the non-self parameters of get_input_spec, ignoring variadic params (*args, **kwargs)."""
-    sig = inspect.signature(model_cls.get_input_spec)
-    return {
-        name: param
-        for name, param in sig.parameters.items()
-        if name != "self"
-        and param.kind
-        not in [inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD]
-    }
+def _parse_int_list(value: str) -> list[int]:
+    """Parse a CLI value as a comma-separated list of ints."""
+    return [int(v.strip()) for v in value.split(",")]
 
 
 def _resolve_param_type(
     param: inspect.Parameter, model_cls: type[BaseModel | BasePrecompiledModel]
-) -> type:
+) -> type | Callable:
     """
-    Resolve a parameter annotation to a concrete type.
+    Resolve a parameter annotation to a concrete type or callable for argparse.
 
     locate() converts a string type annotation to a class type.
     Any type can be resolved as long as it's accessible in this scope.
@@ -898,12 +904,15 @@ def _resolve_param_type(
         )
     if isinstance(param.annotation, type):
         return param.annotation
-    type_ = locate(param.annotation.split(" | ", 1)[0])
+    anno = param.annotation
+    type_ = locate(anno.split(" | ", 1)[0])
+    if anno == "list[int]":
+        return _parse_int_list
     if type_ is None:
-        type_ = locate(f"{model_cls.__module__}.{param.annotation}")
+        type_ = locate(f"{model_cls.__module__}.{anno}")
     if not isinstance(type_, type):
         raise TypeError(
-            f"Annotation '{param.annotation}' for '{param.name}' did not resolve "
+            f"Annotation '{anno}' for '{param.name}' did not resolve "
             f"to a type (got {type_!r})."
         )
     return type_
@@ -951,14 +960,25 @@ def get_collection_model_input_spec_parser(
 
     for comp_name, comp_cls in model_cls.component_classes.items():
         params = _get_input_spec_params(comp_cls)
+        cli_prefix = comp_cls.cli_args_prefix
+        if cli_prefix:
+            cli_prefix += "-"
         for param_name, param in params.items():
-            cli_name = f"--{comp_name.replace('_', '-')}-{param_name.replace('_', '-')}"
+            cli_name = f"--{cli_prefix.replace('_', '-')}{param_name.replace('_', '-')}"
             resolved_type = _resolve_param_type(param, comp_cls)
+            if not comp_cls.cli_args_prefix:
+                help_text = f"Set {param_name}"
+            else:
+                help_text = f"Set {param_name} for {comp_name}"
+
+            default = (
+                param.default if param.default is not inspect.Parameter.empty else None
+            )
             parser.add_argument(
                 cli_name,
                 type=resolved_type,
-                default=None,
-                help=f"Set {param_name} for {comp_name}.",
+                default=default,
+                help=help_text,
             )
 
     return parser
@@ -973,16 +993,18 @@ def get_component_input_spec_kwargs(
     Extract input spec kwargs for a specific component from CLI args.
 
     For each parameter in the component's ``get_input_spec`` signature:
-    - Use ``{component_name}_{param_name}`` if set
+    - Use the CLI-arg key (``{cli_args_prefix}_{param_name}`` or just
+      ``{param_name}`` when ``cli_args_prefix`` is empty) if set
     - Else skip (component uses its default)
     """
     comp_cls = model_cls.component_classes[component_name]
     params = _get_input_spec_params(comp_cls)
+    cli_prefix = getattr(comp_cls, "cli_args_prefix", component_name)
     kwargs: dict[str, Any] = {}
     for param_name in params:
-        prefixed_key = f"{component_name}_{param_name}"
-        if prefixed_key in args_dict and args_dict[prefixed_key] is not None:
-            kwargs[param_name] = args_dict[prefixed_key]
+        key = f"{cli_prefix}_{param_name}" if cli_prefix else param_name
+        if key in args_dict and args_dict[key] is not None:
+            kwargs[param_name] = args_dict[key]
     return kwargs
 
 
@@ -1004,6 +1026,7 @@ def input_spec_from_cli_args(
 def _evaluate_export_common_parser(
     model_cls: type[FromPretrainedTypeVar | FromPrecompiledTypeVar],
     supported_precision_runtimes: dict[Precision, list[TargetRuntime]],
+    omit_precision: bool = False,
 ) -> QAIHMArgumentParser:
     """Common arguments between export and evaluate scripts."""
     # Set handler to resolve, to allow from_pretrained and get_input_spec
@@ -1033,11 +1056,7 @@ def _evaluate_export_common_parser(
         # TODO: #9408 Refactor BaseModel, BasePrecompiledModel to fetch
         # parameters from compiled model
         parser = get_model_cli_parser(model_cls, parser)
-
-        if issubclass(model_cls, BaseModel):
-            parser = get_model_input_spec_parser(model_cls, parser)
-        elif issubclass(model_cls, CollectionModel):
-            parser = get_collection_model_input_spec_parser(model_cls, parser)
+        parser = add_input_spec_args(model_cls, parser)
 
         supported_precisions = {
             precision
@@ -1045,19 +1064,20 @@ def _evaluate_export_common_parser(
             if len(rts) > 0
         }
         non_float_precision = _get_non_float_precision(supported_precisions)
-        add_precision_arg(
-            parser,
-            supported_precisions,
-            default_if_arg_explicitly_passed=non_float_precision or Precision.float,
-            default=(
-                Precision.float
-                if (
-                    len(supported_precisions) == 0
-                    or Precision.float in supported_precisions
-                )
-                else next(iter(supported_precisions))
-            ),
-        )
+        if not omit_precision:
+            add_precision_arg(
+                parser,
+                supported_precisions,
+                default_if_arg_explicitly_passed=non_float_precision or Precision.float,
+                default=(
+                    Precision.float
+                    if (
+                        len(supported_precisions) == 0
+                        or Precision.float in supported_precisions
+                    )
+                    else next(iter(supported_precisions))
+                ),
+            )
 
     return parser
 
@@ -1151,6 +1171,7 @@ def export_parser(
     default_export_device: str | None = None,
     force_fetch_static_assets: bool = False,
     zip_assets: bool = False,
+    omit_precision: bool = False,
 ) -> QAIHMArgumentParser:
     """
     Arg parser to be used in export scripts.
@@ -1175,6 +1196,8 @@ def export_parser(
         If set, fetch_static_assets is always enabled and cannot be turned off.
     zip_assets
         Zips downloaded assets. If set, adds --zip-assets argument to the parser.
+    omit_precision
+        Do not register --precision.
 
     Returns
     -------
@@ -1188,6 +1211,7 @@ def export_parser(
     parser = _evaluate_export_common_parser(
         model_cls=model_cls,
         supported_precision_runtimes=supported_precision_runtimes,
+        omit_precision=omit_precision,
     )
     add_export_function_args(export_fn, parser, force_fetch_static_assets, zip_assets)
     _add_device_args(parser, default_device=default_export_device)

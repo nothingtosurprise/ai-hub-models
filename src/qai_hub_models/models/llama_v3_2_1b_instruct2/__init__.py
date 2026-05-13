@@ -12,6 +12,7 @@ This module provides:
 """
 
 from .model import (  # noqa: F401
+    DEFAULT_PRECISION,
     HF_REPO_NAME,
     HIDDEN_SIZE,
     MIN_MEMORY_RECOMMENDED,
@@ -36,6 +37,7 @@ from .model import (  # noqa: F401
 Model = Llama3_2_1B_Collection
 
 __all__ = [
+    "DEFAULT_PRECISION",
     "HF_REPO_NAME",
     "HIDDEN_SIZE",
     "MIN_MEMORY_RECOMMENDED",

@@ -51,6 +51,7 @@ from __future__ import annotations
 
 import argparse
 import gc
+import sys
 from pathlib import Path
 
 import onnxruntime
@@ -60,6 +61,7 @@ from qai_hub_models.models._shared.llm.model import (
     DEFAULT_CALIBRATION_SEQ_LEN,
     DEFAULT_CONTEXT_LENGTH,
 )
+from qai_hub_models.models._shared.llm.quantize import save_command_args
 from qai_hub_models.models.common import Precision
 from qai_hub_models.models.llama_v3_2_1b_instruct2.model import (
     HF_REPO_NAME,
@@ -99,8 +101,6 @@ def export_onnx(
     print("Creating FP model...")
     fp_model = Llama3_2_1B_PreSplit.from_pretrained(
         checkpoint=source_checkpoint,
-        sequence_length=seq_len,
-        context_length=context_length,
         host_device=host_device,
     )
 
@@ -207,8 +207,6 @@ def quantize(
     print("Creating FP model...")
     fp_model = Llama3_2_1B_PreSplit.from_pretrained(
         checkpoint=source_checkpoint,
-        sequence_length=seq_len,
-        context_length=context_length,
         host_device=host_device,
     )
 
@@ -227,8 +225,6 @@ def quantize(
         model_quant = Llama3_2_1B_QuantizablePreSplit.from_pretrained(
             checkpoint=onnx_dir,
             fp_model=fp_model,
-            sequence_length=seq_len,
-            context_length=context_length,
             precision=precision,
             host_device=host_device,
         )
@@ -243,8 +239,6 @@ def quantize(
         model_quant = Llama3_2_1B_QuantizablePreSplit.from_pretrained(
             checkpoint=source_checkpoint,
             fp_model=fp_model,
-            sequence_length=seq_len,
-            context_length=context_length,
             precision=precision,
             host_device=host_device,
         )
@@ -401,7 +395,8 @@ def main() -> None:
         help="Pick the precision with which the model must be quantized.",
     )
 
-    args = parser.parse_args()
+    cli_args = sys.argv[1:]
+    args = parser.parse_args(cli_args)
 
     if args.export_only:
         export_onnx(
@@ -426,6 +421,8 @@ def main() -> None:
         ada_scale_num_samples=args.ada_scale_num_samples,
         ada_scale_num_iterations=args.ada_scale_num_iterations,
     )
+
+    save_command_args(Path(args.output_dir) / "args.json", args, cli_args)
 
     print()
     print(

@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import warnings
 from enum import Enum, unique
@@ -16,6 +17,7 @@ import onnx
 import torch
 from typing_extensions import Self
 
+from qai_hub_models.models.common import Precision
 from qai_hub_models.utils.asset_loaders import qaihm_temp_dir
 from qai_hub_models.utils.input_spec import make_torch_inputs
 from qai_hub_models.utils.onnx.helpers import (
@@ -139,6 +141,26 @@ class CheckpointType(Enum):
             self.DEFAULT_W4A16,
             self.AIMET_ONNX_EXPORT,
         }
+
+    def precision(
+        self,
+        default_precision: Precision,
+        checkpoint: CheckpointSpec | None = None,
+    ) -> Precision:
+        if self == self.DEFAULT:
+            return default_precision
+        if self == self.DEFAULT_W4:
+            return Precision.w4
+        if self == self.DEFAULT_W4A16:
+            return Precision.w4a16
+        if self == self.AIMET_ONNX_EXPORT and checkpoint is not None:
+            args_path = Path(checkpoint) / "args.json"
+            if args_path.is_file():
+                with open(args_path) as f:
+                    args = json.load(f)
+                if "precision" in args:
+                    return Precision.parse(args["precision"])
+        return default_precision
 
 
 def hf_repo_exists(repo_id: str) -> bool:

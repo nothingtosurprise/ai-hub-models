@@ -26,6 +26,8 @@ from qai_hub_models.models._shared.llm.model import (
     Embedding,
     LLM_AIMETOnnx,
     LLMBase,
+    LLMDynamic_AIMETOnnx,
+    LLMDynamicBase,
 )
 
 if TYPE_CHECKING:
@@ -108,9 +110,18 @@ class LLM_Loader:
 
     def load(self) -> LLMBase | LLM_AIMETOnnx | LLM_QNN:
         if self.loaded_model is None:
-            self.loaded_model = self.model_cls.from_pretrained(
-                sequence_length=self.sequence_length, **self.model_params
-            ).to(self.host_device)
+            is_dynamic = issubclass(
+                self.model_cls, (LLMDynamicBase, LLMDynamic_AIMETOnnx)
+            )
+            kwargs = dict(self.model_params)
+            if not is_dynamic:
+                kwargs["sequence_length"] = self.sequence_length
+            else:
+                kwargs.pop("context_length", None)
+                kwargs.pop("sequence_length", None)
+            self.loaded_model = self.model_cls.from_pretrained(**kwargs).to(
+                self.host_device
+            )
 
         assert self.loaded_model is not None
         return self.loaded_model
@@ -158,6 +169,7 @@ class LLM_Generator(GenerationMixin, torch.nn.Module):
             if isinstance(self.models[-1], LLM_Loader)
             else self.models[-1]
         )
+        self.selected_sequence_length: int | None = self.models[-1].sequence_length
 
         self.tokenizer = tokenizer
         self.embedding = embedding
@@ -214,9 +226,9 @@ class LLM_Generator(GenerationMixin, torch.nn.Module):
 
     @property
     def device(self) -> torch.device:
-        if isinstance(self.selected_model, LLM_AIMETOnnx):
-            assert self.selected_model.host_device is not None
-            return self.selected_model.host_device
+        host_device = getattr(self.selected_model, "host_device", None)
+        if host_device is not None:
+            return host_device
 
         # Note: torch.nn.Module.device does not exist according to PyTorch
         # documentation and mypy.
@@ -462,14 +474,17 @@ class LLM_Generator(GenerationMixin, torch.nn.Module):
             ):
                 new_selected_model = model  # if there is any model with a smaller sequence length that works, select it
 
-        if self.selected_model.sequence_length == new_selected_model.sequence_length:
+        if self.selected_sequence_length == new_selected_model.sequence_length:
             return self.selected_model
 
         print(
-            f"Switching from sequence_length={self.selected_model.sequence_length} to sequence_length={new_selected_model.sequence_length}"
+            f"Switching from sequence_length={self.selected_sequence_length} to sequence_length={new_selected_model.sequence_length}"
         )
         # release the model to preserve memory
-        if isinstance(self.selected_model, (LLM_Loader, LLM_AIMETOnnx, LLM_QNN)):
+        if isinstance(
+            self.selected_model,
+            (LLM_Loader, LLM_AIMETOnnx, LLM_QNN),
+        ):
             self.selected_model.release()
 
         self.selected_model = (
@@ -477,6 +492,7 @@ class LLM_Generator(GenerationMixin, torch.nn.Module):
             if isinstance(new_selected_model, LLM_Loader)
             else new_selected_model
         )
+        self.selected_sequence_length = new_selected_model.sequence_length
         return self.selected_model
 
     @staticmethod

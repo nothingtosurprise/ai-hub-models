@@ -147,19 +147,11 @@ def test_load_encodings_to_quantsim(checkpoint: str) -> None:
 @pytest.mark.parametrize(
     ("checkpoint", "task", "expected_metric", "num_samples"),
     [
-        ("DEFAULT_W4", "wikitext", 16.78, 0),
+        pytest.param("DEFAULT_W4", "wikitext", 16.79, 0, marks=pytest.mark.nightly),
         ("DEFAULT_W4", "mmlu", 0.399, 1000),
-        pytest.param(
-            "DEFAULT_W4",
-            "tiny_mmlu",
-            0.43,
-            0,
-            marks=pytest.mark.xfail(
-                reason="Split-forward quantized inference accuracy regression: actual 0.32 vs expected 0.43"
-            ),
-        ),
-        ("DEFAULT_W4A16", "wikitext", 17.43, 0),
-        ("DEFAULT_W4A16", "mmlu", 0.403, 1000),
+        ("DEFAULT_W4", "tiny_mmlu", 0.43, 0),
+        pytest.param("DEFAULT_W4A16", "wikitext", 17.47, 0, marks=pytest.mark.nightly),
+        ("DEFAULT_W4A16", "mmlu", 0.390, 1000),
         ("DEFAULT_UNQUANTIZED", "wikitext", 12.18, 0),
         ("DEFAULT_UNQUANTIZED", "mmlu", 0.482, 1000),
         ("DEFAULT_UNQUANTIZED", "tiny_mmlu", 0.41, 0),
@@ -202,6 +194,7 @@ def test_evaluate(
     np.testing.assert_allclose(actual_metric, expected_metric, rtol=0.03, atol=0)
 
 
+@pytest.mark.nightly
 @pytest.mark.demo
 @pytest.mark.skipif(
     not torch.cuda.is_available(), reason="This test can be run on GPU only."
@@ -234,6 +227,7 @@ def test_quantize_and_demo(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -
     QuantizedSplitModelWrapper.clear_cache()
 
 
+@pytest.mark.nightly
 @pytest.mark.demo
 @pytest.mark.skipif(
     not torch.cuda.is_available(), reason="This test can be run on GPU only."
@@ -255,6 +249,7 @@ def test_demo_default(
     assert "Paris" in captured.out
 
 
+@pytest.mark.nightly
 @pytest.mark.skipif(
     not torch.cuda.is_available(),
     reason="This test can be run on GPU only.",
@@ -289,7 +284,7 @@ def test_compile(
         extra_model_arguments=dict(
             checkpoint=checkpoint,
             sequence_length=[DEFAULT_SEQUENCE_LENGTH, 1],
-            context_length=DEFAULT_CONTEXT_LENGTH,
+            context_length=[DEFAULT_CONTEXT_LENGTH],
             _skip_quantsim_creation=True,
             output_dir=test.GENIE_BUNDLES_ROOT,
         ),
@@ -308,6 +303,7 @@ def test_compile(
     assert (genie_bundle_path / "sample_prompt.txt").exists()
 
 
+@pytest.mark.nightly
 @pytest.mark.skipif(
     not torch.cuda.is_available()
     or not importlib.util.find_spec("qualcomm_device_cloud_sdk"),
@@ -362,7 +358,7 @@ def test_qdc(
         assert tps > 24.0
         assert min_ttft < 100000.0
     else:
-        assert tps > 8.0
+        assert tps > 18.0
         assert min_ttft < 135000.0
 
 

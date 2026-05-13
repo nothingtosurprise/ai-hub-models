@@ -466,7 +466,7 @@ def test_qdc(
         assert tps > 24.0
         assert min_ttft < 100000.0
     else:
-        assert tps > 8.00
+        assert tps > 18.00
         assert min_ttft < 135000.0
 
 

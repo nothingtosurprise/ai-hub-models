@@ -11,16 +11,20 @@ from qai_hub_models.models._shared.llm.model import (
     LLMBase,
     LLM_AIMETOnnx,
     LLM_QNN,
+    LLMDynamicBase,
+    LLMDynamic_AIMETOnnx,
     DEFAULT_CONTEXT_LENGTH,
     DEFAULT_SEQUENCE_LENGTH,
     FPModelT,
-    QuantizablePreSplitMixin,
+    DynamicQuantizablePreSplitMixin,
+    get_onnx_model,
 )
 
 # isort: on
 import copy
 import json
 import os
+import shutil
 from enum import Enum, unique
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -30,6 +34,8 @@ import torch
 
 if TYPE_CHECKING:
     from aimet_onnx.quantsim import QuantizationSimModel
+
+    from qai_hub_models.utils.onnx.helpers import ONNXBundle
 
 import qai_hub as hub
 import transformers
@@ -51,7 +57,9 @@ from qai_hub_models.models._shared.llm.model import (
 )
 from qai_hub_models.models.common import Precision
 from qai_hub_models.utils.aimet.encodings import propagate_memory_encodings
-from qai_hub_models.utils.asset_loaders import CachedWebModelAsset
+from qai_hub_models.utils.asset_loaders import ASSET_CONFIG, CachedWebModelAsset
+from qai_hub_models.utils.onnx.helpers import ONNXBundle
+from qai_hub_models.utils.printing import print_with_box
 
 MODEL_ID = __name__.split(".")[-2]
 MODEL_ASSET_VERSION = 1
@@ -395,8 +403,146 @@ class Llama3Base_QNN(LLM_QNN):
     num_layers_per_split: int
 
 
-class LlamaQuantizablePreSplitMixin(QuantizablePreSplitMixin[FPModelT]):
-    """Llama-specific QuantizablePreSplit that exports ONNX from torch.
+# ---------------------------------------------------------------------------
+# Dynamic-shape Llama3 classes
+# ---------------------------------------------------------------------------
+
+
+class Llama3DynamicBase(LLMDynamicBase, Llama3Base):
+    """Llama3 FP base with dynamic-shape ONNX export.
+
+    Provides get_full_onnx_bundle() which exports the torch model to ONNX
+    with dynamic shapes, caching the result alongside model.encodings.
+    """
+
+    def get_full_onnx_bundle(self, temp_path: Path) -> ONNXBundle:
+        """Export full ONNX from PyTorch with dynamic shapes.
+
+        Caches the exported ONNX to the default checkpoint directory
+        (alongside model.encodings) so subsequent runs skip the ~30 min
+        export.
+        """
+        precision_dir = self.default_checkpoint.get(self.default_precision)
+        cache_dir = (
+            ASSET_CONFIG.get_local_store_model_path(
+                self.model_id, self.model_asset_version, precision_dir
+            )
+            if precision_dir
+            else None
+        )
+
+        if cache_dir is not None:
+            cached_onnx = cache_dir / "model_dynamic.onnx"
+            cached_data = cache_dir / "model.data"
+            if cached_onnx.exists() and cached_data.exists():
+                print(f"\nLoading cached dynamic ONNX from {cache_dir}")
+                bundle_dir = temp_path / "full_dynamic"
+                bundle_dir.mkdir(parents=True, exist_ok=True)
+                shutil.copy(cached_onnx, bundle_dir / "model.onnx")
+                shutil.copy(cached_data, bundle_dir / "model.data")
+                return ONNXBundle.from_bundle_path(bundle_dir, "model")
+
+        print_with_box(
+            [
+                "Exporting ONNX model with dynamic shapes.",
+                "This may take around 30 minutes.",
+            ]
+        )
+        onnx_dir = temp_path / "full_dynamic"
+        onnx_dir.mkdir(parents=True, exist_ok=True)
+        onnx_path = onnx_dir / "model.onnx"
+        get_onnx_model(
+            fp_model=self,
+            context_length=self.context_length,
+            sequence_length=self.sequence_length,
+            path=str(onnx_path),
+            return_model=False,
+            llm_io_type=self.llm_io_type,
+            use_dynamic_shapes=True,
+            quiet=True,
+        )
+
+        if cache_dir is not None:
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy(onnx_dir / "model.onnx", cache_dir / "model_dynamic.onnx")
+            shutil.copy(onnx_dir / "model.data", cache_dir / "model.data")
+            print(f"\nCached dynamic ONNX to {cache_dir}")
+
+        return ONNXBundle.from_bundle_path(onnx_dir, "model")
+
+
+class Llama3DynamicBase_AIMETOnnx(LLMDynamic_AIMETOnnx, Llama3Base_AIMETOnnx):
+    """Dynamic-shape variant of Llama3Base_AIMETOnnx."""
+
+    FPModel = Llama3DynamicBase  # type: ignore[assignment]
+
+    def _adapt_aimet_encodings(
+        self, src_encodings_path: str, dst_encodings_path: str, onnx_model_path: str
+    ) -> None:
+        """Adapt AIMET encodings for the dynamic-shape ONNX model.
+
+        The dynamic ONNX uses node names from torch.export, so this override
+        finds the embedding Gather by op_type rather than hardcoded static
+        names. Single pass:
+        1. Sets the embedding Gather output encoding (precision-dependent)
+        2. Promotes weight activation encodings to param_encodings
+        3. Propagates encodings through memory ops for correct splitting
+        """
+        with open(src_encodings_path) as f:
+            encodings = json.load(f)
+
+        model = onnx.load(onnx_model_path, load_external_data=False)
+
+        uses_lists = Version(encodings["version"]) >= Version("1.0.0")
+        if uses_lists:
+            encodings["activation_encodings"] = {
+                v["name"]: v for v in encodings["activation_encodings"]
+            }
+            encodings["param_encodings"] = {
+                v["name"]: v for v in encodings["param_encodings"]
+            }
+
+        # Find the embedding Gather node and set its output encoding.
+        # For w4 (no activation quantization): use fp16.
+        # For w4a16: copy the embedding weight's quantization parameters.
+        gather_node = next((n for n in model.graph.node if n.op_type == "Gather"), None)
+        if gather_node is not None:
+            gather_output = gather_node.output[0]
+            embed_weight_name = gather_node.input[0]
+
+            if self.precision == Precision.w4:
+                encodings["activation_encodings"][gather_output] = {
+                    "bw": 16,
+                    "dtype": "FLOAT",
+                    "enc_type": "PER_TENSOR",
+                    "name": gather_output,
+                }
+            else:
+                weight_enc = encodings["activation_encodings"].get(embed_weight_name)
+                if weight_enc is not None:
+                    embedding_enc = copy.deepcopy(weight_enc)
+                    embedding_enc["name"] = gather_output
+                    encodings["activation_encodings"][gather_output] = embedding_enc
+
+        # Promote weight entries in activation_encodings to param_encodings
+        for key, value in list(encodings["activation_encodings"].items()):
+            if "weight" in key:
+                encodings["param_encodings"][key] = copy.deepcopy(value)
+
+        propagate_memory_encodings(encodings, model)
+
+        if uses_lists:
+            encodings["activation_encodings"] = list(
+                encodings["activation_encodings"].values()
+            )
+            encodings["param_encodings"] = list(encodings["param_encodings"].values())
+
+        with open(dst_encodings_path, "w") as f:
+            json.dump(encodings, f, indent=4, sort_keys=True)
+
+
+class LlamaDynamicQuantizablePreSplitMixin(DynamicQuantizablePreSplitMixin[FPModelT]):
+    """Llama-specific DynamicQuantizablePreSplit that exports ONNX from torch.
 
     Overrides resolve_default_checkpoint to download only the quantization
     encodings from the asset store, then export the ONNX model locally
@@ -408,8 +554,6 @@ class LlamaQuantizablePreSplitMixin(QuantizablePreSplitMixin[FPModelT]):
     def resolve_default_checkpoint(
         cls,
         precision: Precision,
-        sequence_length: int,
-        context_length: int,
         host_device: torch.device,
         fp_model: FPModelT | None,
     ) -> tuple[str, FPModelT | None]:
@@ -419,10 +563,6 @@ class LlamaQuantizablePreSplitMixin(QuantizablePreSplitMixin[FPModelT]):
         ----------
         precision
             Quantization precision (already validated).
-        sequence_length
-            Sequence length for the model.
-        context_length
-            Context length for the model.
         host_device
             Device for computation.
         fp_model
@@ -448,8 +588,6 @@ class LlamaQuantizablePreSplitMixin(QuantizablePreSplitMixin[FPModelT]):
         # Create FP model for ONNX export + tokenizer/config
         if fp_model is None:
             fp_model = cls.FPModel.from_pretrained(  # type: ignore[call-arg]
-                sequence_length=sequence_length,
-                context_length=context_length,
                 host_device=host_device,
             )
 
@@ -468,7 +606,7 @@ class LlamaQuantizablePreSplitMixin(QuantizablePreSplitMixin[FPModelT]):
         cls.create_onnx_models(  # type: ignore[attr-defined]
             checkpoint=checkpoint,
             fp_model=fp_model,
-            context_length=context_length,
+            context_length=fp_model.context_length,
             host_device=host_device,
             llm_io_type=fp_model.llm_io_type,
             use_dynamic_shapes=True,

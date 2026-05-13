@@ -25,9 +25,14 @@ from qai_hub_models.configs.model_metadata import (
 )
 from qai_hub_models.configs.tool_versions import ToolVersions
 from qai_hub_models.models.common import SampleInputsType
-from qai_hub_models.models.llama_v3_2_1b_instruct2 import MODEL_ID, Model
+from qai_hub_models.models.llama_v3_2_1b_instruct2 import (
+    DEFAULT_PRECISION,
+    MODEL_ID,
+    Model,
+)
 from qai_hub_models.utils.args import (
     export_parser,
+    get_component_input_spec_kwargs,
     get_export_model_name,
     get_model_kwargs,
 )
@@ -39,6 +44,7 @@ from qai_hub_models.utils.base_model import (
     BaseModel,
     MultiGraphPretrainedCollectionModel,
 )
+from qai_hub_models.utils.checkpoint import CheckpointType
 from qai_hub_models.utils.compare import torch_inference
 from qai_hub_models.utils.export_result import (
     ComponentGroup,
@@ -276,13 +282,12 @@ def download_model(
 def export_model(
     device: hub.Device,
     components: list[str] | None = None,
-    precision: Precision = Precision.w4,
     skip_profiling: bool = False,
     skip_inferencing: bool = False,
     skip_downloading: bool = False,
     skip_summary: bool = False,
     output_dir: str | None = None,
-    target_runtime: TargetRuntime = TargetRuntime.QNN_CONTEXT_BINARY,
+    target_runtime: TargetRuntime = TargetRuntime.GENIE,
     compile_options: str = "",
     profile_options: str = "",
     fetch_static_assets: str | None = None,
@@ -311,9 +316,6 @@ def export_model(
         List of sub-components of the model that will be exported.
         Each component is compiled and profiled separately.
         Defaults to all components of the CollectionModel if not specified.
-    precision
-        The precision to which this model should be quantized.
-        Quantization is skipped if the precision is float.
     skip_profiling
         If set, skips profiling of compiled model on real devices.
     skip_inferencing
@@ -348,6 +350,15 @@ def export_model(
             * A ProfileJob containing metadata about the profile job (None if profiling skipped).
         * The path to the downloaded model folder (or zip), or None if one or more of: skip_downloading is True, fetch_static_assets is set, or AI Hub Workbench is not accessible
     """
+    checkpoint = additional_model_kwargs.get("checkpoint")
+    if checkpoint is not None:
+        precision = CheckpointType.from_checkpoint(checkpoint).precision(
+            DEFAULT_PRECISION, checkpoint=checkpoint
+        )
+    else:
+        precision = additional_model_kwargs.get("precision", DEFAULT_PRECISION)
+    additional_model_kwargs["precision"] = precision
+
     model_name = get_export_model_name(
         Model, MODEL_ID, precision, additional_model_kwargs
     )
@@ -388,10 +399,13 @@ def export_model(
     chipset = chipset_attr.split(":")[-1] if chipset_attr else None
 
     # 1. Instantiates a PyTorch model and converts it to a traced TorchScript format
-    model = Model.from_pretrained(
-        **get_model_kwargs(Model, dict(**additional_model_kwargs, precision=precision))
+    model = Model.from_pretrained(**get_model_kwargs(Model, additional_model_kwargs))
+    first_component = next(iter(Model.component_classes))  # type: ignore[misc]
+    input_specs = model.get_input_spec(
+        **get_component_input_spec_kwargs(
+            Model, first_component, additional_model_kwargs
+        )
     )
-    input_specs = model.get_input_spec()
 
     # 2. Compiles the model to an asset that can be run on device
     compile_result = compile_model(
@@ -549,13 +563,21 @@ def main() -> None:
     warnings.filterwarnings("ignore")
     if not check_unpublished_model_warning():
         return
-    supported_precision_runtimes: dict[Precision, list[TargetRuntime]] = {}
+    supported_precision_runtimes: dict[Precision, list[TargetRuntime]] = {
+        Precision.w4: [
+            TargetRuntime.GENIE,
+        ],
+        Precision.w4a16: [
+            TargetRuntime.GENIE,
+        ],
+    }
 
     parser = export_parser(
         model_cls=Model,
         export_fn=export_model,
         supported_precision_runtimes=supported_precision_runtimes,
         default_export_device="Samsung Galaxy S25 (Family)",
+        omit_precision=True,
     )
     args = parser.parse_args()
     export_model(**vars(args))

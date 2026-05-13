@@ -38,19 +38,24 @@ from typing_extensions import Self
 
 from qai_hub_models.configs.model_metadata import ModelMetadata
 from qai_hub_models.models._shared.llama3.model import (
-    Llama3Base,
-    Llama3Base_AIMETOnnx,
-    LlamaQuantizablePreSplitMixin,
+    Llama3DynamicBase,
+    Llama3DynamicBase_AIMETOnnx,
+    LlamaDynamicQuantizablePreSplitMixin,
 )
 from qai_hub_models.models._shared.llm.common import LLMIOType
 from qai_hub_models.models._shared.llm.model import (
     DEFAULT_CONTEXT_LENGTH,
     DEFAULT_SEQUENCE_LENGTH,
-    LLM_AIMETOnnx,
-    PreSplitOnnxMixin,
+    DynamicPreSplitOnnxMixin,
+    LLMDynamic_AIMETOnnx,
     SingleSlotCacheMixin,
     SplitForwardMixin,
-    get_onnx_model,
+)
+from qai_hub_models.models._shared.llm.model import (
+    DEFAULT_EXPORT_CONTEXT_LENGTHS as GLOBAL_DEFAULT_EXPORT_CONTEXT_LENGTHS,
+)
+from qai_hub_models.models._shared.llm.model import (
+    DEFAULT_EXPORT_SEQUENCE_LENGTHS as GLOBAL_DEFAULT_EXPORT_SEQUENCE_LENGTHS,
 )
 from qai_hub_models.models.common import (
     Precision,
@@ -64,6 +69,7 @@ from qai_hub_models.utils.base_model import (
     MultiGraphPretrainedCollectionModel,
     TargetRuntime,
 )
+from qai_hub_models.utils.checkpoint import CheckpointType
 from qai_hub_models.utils.export_result import MultiGraphGroup
 from qai_hub_models.utils.input_spec import InputSpec
 from qai_hub_models.utils.llm_helpers import (
@@ -71,13 +77,15 @@ from qai_hub_models.utils.llm_helpers import (
     save_htp_config_for_genie_bundle,
 )
 from qai_hub_models.utils.onnx.helpers import ONNXBundle, mock_torch_onnx_inference
-from qai_hub_models.utils.printing import print_with_box
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_EXPORT_CONTEXT_LENGTHS = GLOBAL_DEFAULT_EXPORT_CONTEXT_LENGTHS
+DEFAULT_EXPORT_SEQUENCE_LENGTHS = GLOBAL_DEFAULT_EXPORT_SEQUENCE_LENGTHS
+
 # Model identification
 MODEL_ID = __name__.split(".")[-2]
-MODEL_ASSET_VERSION = 3
+MODEL_ASSET_VERSION = 4
 
 # Model architecture constants (from Llama 3.2 1B)
 NUM_LAYERS = 16
@@ -109,7 +117,9 @@ SPLIT_MODEL_NAME = "Llama3_2_1B"
 # ---------------------------------------------------------------------------
 
 
-class Llama3_2_1B_PreSplit(SingleSlotCacheMixin, PreSplitOnnxMixin, Llama3Base):
+class Llama3_2_1B_PreSplit(
+    SingleSlotCacheMixin, DynamicPreSplitOnnxMixin, Llama3DynamicBase
+):
     """
     FP PreSplit for Llama 3.2 1B.
 
@@ -123,6 +133,11 @@ class Llama3_2_1B_PreSplit(SingleSlotCacheMixin, PreSplitOnnxMixin, Llama3Base):
     split_model_name = SPLIT_MODEL_NAME
     num_splits = NUM_SPLITS
     num_layers_per_split = NUM_LAYERS_PER_SPLIT
+
+    model_id = MODEL_ID
+    model_asset_version = MODEL_ASSET_VERSION
+    default_checkpoint = DEFAULT_CHECKPOINT
+    default_precision = DEFAULT_PRECISION
 
     def __init__(
         self,
@@ -147,31 +162,23 @@ class Llama3_2_1B_PreSplit(SingleSlotCacheMixin, PreSplitOnnxMixin, Llama3Base):
     def from_pretrained(
         cls,
         checkpoint: str | Path = HF_REPO_NAME,
-        sequence_length: int = DEFAULT_SEQUENCE_LENGTH,
-        context_length: int = DEFAULT_CONTEXT_LENGTH,
         host_device: torch.device | None = None,
         _skip_optimizations: list[str] | None = None,
     ) -> Llama3_2_1B_PreSplit:
         """
         Load or return a cached FP PreSplit.
 
-        If a cached instance exists for the same checkpoint, returns it
-        with updated sequence/context lengths (dynamic shapes). If a
-        different checkpoint is requested, the old instance is freed first.
+        Uses dynamic shapes so sequence_length/context_length are not
+        needed at construction time.
         """
         cache_key = str(checkpoint)
         cached = cls.cache_lookup(cache_key)
         if cached is not None:
-            cached.sequence_length = sequence_length
-            cached.context_length = context_length
             return cached
 
         instance = cls(
             checkpoint=checkpoint,
-            sequence_length=sequence_length,
-            context_length=context_length,
             host_device=host_device,
-            # Always load checkpoint weights. Subclass to disable.
             load_pretrained=True,
             _skip_optimizations=_skip_optimizations,
         )
@@ -181,7 +188,7 @@ class Llama3_2_1B_PreSplit(SingleSlotCacheMixin, PreSplitOnnxMixin, Llama3Base):
     @staticmethod
     def get_output_names() -> list[str]:
         """Get output names for the full model."""
-        return Llama3Base._get_output_names(NUM_LAYERS)
+        return Llama3DynamicBase._get_output_names(NUM_LAYERS)
 
     @staticmethod
     def get_input_spec(
@@ -198,7 +205,7 @@ class Llama3_2_1B_PreSplit(SingleSlotCacheMixin, PreSplitOnnxMixin, Llama3Base):
                 "num_key_value_heads": NUM_KEY_VALUE_HEADS,
                 "num_attention_heads": NUM_ATTN_HEADS,
             }
-        return Llama3Base._get_input_spec(
+        return Llama3DynamicBase._get_input_spec(
             num_hidden_layers=llm_config.get("num_hidden_layers", NUM_LAYERS),
             sequence_length=sequence_length,
             context_length=context_length,
@@ -210,29 +217,6 @@ class Llama3_2_1B_PreSplit(SingleSlotCacheMixin, PreSplitOnnxMixin, Llama3Base):
             llm_io_type=llm_io_type,
         )
 
-    def get_full_onnx_bundle(self, temp_path: Path) -> ONNXBundle:
-        """Export full ONNX from PyTorch with dynamic shapes."""
-        print_with_box(
-            [
-                "Exporting ONNX model with dynamic shapes.",
-                "This may take around 30 minutes.",
-            ]
-        )
-        onnx_dir = temp_path / "full_dynamic"
-        onnx_dir.mkdir(parents=True, exist_ok=True)
-        onnx_path = onnx_dir / "model.onnx"
-        get_onnx_model(
-            fp_model=self,
-            context_length=self.context_length,
-            sequence_length=self.sequence_length,
-            path=str(onnx_path),
-            return_model=False,
-            llm_io_type=self.llm_io_type,
-            use_dynamic_shapes=True,
-            quiet=True,
-        )
-        return ONNXBundle.from_bundle_path(onnx_dir, "model")
-
 
 # ---------------------------------------------------------------------------
 # Llama3_2_1B_QuantizablePreSplit - Quantizable PreSplit with class-level cache
@@ -240,7 +224,8 @@ class Llama3_2_1B_PreSplit(SingleSlotCacheMixin, PreSplitOnnxMixin, Llama3Base):
 
 
 class Llama3_2_1B_QuantizablePreSplit(  # type: ignore[misc]
-    LlamaQuantizablePreSplitMixin[Llama3_2_1B_PreSplit], Llama3Base_AIMETOnnx
+    LlamaDynamicQuantizablePreSplitMixin[Llama3_2_1B_PreSplit],
+    Llama3DynamicBase_AIMETOnnx,
 ):
     """
     Quantizable PreSplit for Llama 3.2 1B.
@@ -252,21 +237,32 @@ class Llama3_2_1B_QuantizablePreSplit(  # type: ignore[misc]
     """
 
     FPModel = Llama3_2_1B_PreSplit  # type: ignore[assignment]
-    split_model_name = SPLIT_MODEL_NAME
-    num_splits = NUM_SPLITS
-    num_layers_per_split = NUM_LAYERS_PER_SPLIT
 
-    # QuantizablePreSplitMixin config
+    # DynamicQuantizablePreSplitMixin config
     model_id = MODEL_ID
     model_asset_version = MODEL_ASSET_VERSION
     default_checkpoint = DEFAULT_CHECKPOINT
     supported_precisions = SUPPORTED_PRECISIONS
     default_precision = DEFAULT_PRECISION
 
+    # DynamicPreSplitOnnxMixin config
+    split_model_name = SPLIT_MODEL_NAME
+    num_splits = NUM_SPLITS
+    num_layers_per_split = NUM_LAYERS_PER_SPLIT
+
     @staticmethod
     def get_output_names() -> list[str]:
         """Get output names for the full model."""
-        return Llama3Base._get_output_names(NUM_LAYERS)
+        return Llama3DynamicBase._get_output_names(NUM_LAYERS)
+
+    def _postprocess_full_onnx_bundle(self, bundle: ONNXBundle) -> ONNXBundle:
+        if bundle.aimet_encodings_path is not None:
+            self._adapt_aimet_encodings(
+                str(bundle.aimet_encodings_path),
+                str(bundle.aimet_encodings_path),
+                str(bundle.onnx_graph_path),
+            )
+        return super()._postprocess_full_onnx_bundle(bundle)
 
     @classmethod
     def get_input_spec(
@@ -325,33 +321,30 @@ class Llama3_2_1B_PartBase(MultiGraphBaseModel):
     def from_pretrained(
         cls,
         checkpoint: str | Path = "DEFAULT",
-        sequence_length: int = DEFAULT_SEQUENCE_LENGTH,
-        context_length: int = DEFAULT_CONTEXT_LENGTH,
-        precision: Precision = DEFAULT_PRECISION,
         host_device: torch.device | None = None,
         _skip_quantsim_creation: bool = True,
-        sequence_lengths: list[int] | None = None,
         **kwargs: Any,
     ) -> Self:
         """Create Part by getting or creating the appropriate PreSplit (cached)."""
-        if precision == Precision.float:
+        checkpoint_type = CheckpointType.from_checkpoint(checkpoint)
+        if not checkpoint_type.is_aimet_onnx():
             presplit: Llama3_2_1B_PreSplit | Llama3_2_1B_QuantizablePreSplit = (
                 Llama3_2_1B_PreSplit.from_pretrained(
-                    sequence_length=sequence_length,
-                    context_length=context_length,
                     host_device=host_device,
                 )
             )
+            precision = Precision.float
         else:
+            precision = checkpoint_type.precision(
+                DEFAULT_PRECISION, checkpoint=checkpoint
+            )
             presplit = Llama3_2_1B_QuantizablePreSplit.from_pretrained(
-                sequence_length=sequence_length,
-                context_length=context_length,
                 precision=precision,
                 checkpoint=checkpoint,
                 host_device=host_device,
                 _skip_quantsim_creation=_skip_quantsim_creation,
             )
-        return cls(presplit, precision=precision, sequence_lengths=sequence_lengths)
+        return cls(presplit, precision=precision)
 
     @staticmethod
     def get_default_input_spec(
@@ -368,7 +361,11 @@ class Llama3_2_1B_PartBase(MultiGraphBaseModel):
             llm_io_type=llm_io_type,
         )
 
-    def _get_input_spec_for_instance(self, seq_len: int | None = None) -> InputSpec:
+    def _get_input_spec_for_instance(
+        self,
+        sequence_length: int | None = None,
+        context_length: int | None = None,
+    ) -> InputSpec:
         """Get input spec for this specific Part instance.
 
         Part 1 (embedding): only input_ids.
@@ -377,19 +374,19 @@ class Llama3_2_1B_PartBase(MultiGraphBaseModel):
                  part's KV cache layers.
 
         Names are read from the actual split ONNX model at runtime.
-        The ONNX uses dynamic shapes, so one export works for any seq_len;
+        The ONNX uses dynamic shapes, so one export works for any sequence_length;
         only the concrete shapes in the spec differ.
         """
-        if seq_len is None:
-            seq_len = self._presplit.sequence_length
+        if sequence_length is None:
+            sequence_length = self._presplit.sequence_length
+        if context_length is None:
+            context_length = self._presplit.context_length
         if self.part_id == 1:
             # Embedding split: only input_ids
-            return {"input_ids": ((1, seq_len), "int32")}
-
-        context_length = self._presplit.context_length
+            return {"input_ids": ((1, sequence_length), "int32")}
         head_dim = HIDDEN_SIZE // NUM_ATTN_HEADS
         embed_dim = head_dim // 2
-        kv_seq_len = context_length - seq_len
+        kv_seq_len = context_length - sequence_length
 
         # Read actual input names from the split ONNX model
         onnx_input_names = self._get_onnx_input_names()
@@ -409,19 +406,19 @@ class Llama3_2_1B_PartBase(MultiGraphBaseModel):
                 )
             elif name == "attention_mask":
                 spec[name] = (
-                    (1, 1, seq_len, context_length),
+                    (1, 1, sequence_length, context_length),
                     "float32",
                 )
             elif "position_ids_cos" in name or "position_ids_sin" in name:
                 spec[name] = (
-                    (1, 1, seq_len, embed_dim),
+                    (1, 1, sequence_length, embed_dim),
                     "float32",
                 )
             else:
                 # Intermediate hidden state from previous part
                 # (found by process of elimination)
                 spec[name] = (
-                    (1, seq_len, HIDDEN_SIZE),
+                    (1, sequence_length, HIDDEN_SIZE),
                     "float32",
                 )
 
@@ -525,8 +522,10 @@ class Llama3_2_1B_PartBase(MultiGraphBaseModel):
         # Use shared construction + activation config. We skip the
         # full-model _configure_quant_sim (lm_head, KV tying) since
         # those heuristics misfire on split models.
-        self._quant_sim = LLM_AIMETOnnx._build_quantsim(onnx_model, providers)
-        LLM_AIMETOnnx._apply_precision_activations(self._quant_sim, self._precision)
+        self._quant_sim = LLMDynamic_AIMETOnnx._build_quantsim(onnx_model, providers)
+        LLMDynamic_AIMETOnnx._apply_precision_activations(
+            self._quant_sim, self._precision
+        )
 
         # Load encodings if available
         if onnx_bundle.aimet_encodings_path is not None:
@@ -582,7 +581,10 @@ class Llama3_2_1B_PartBase(MultiGraphBaseModel):
         model_name = self.__class__.__name__
 
         ext = ".aimet" if self._is_quantized else ".onnx"
-        out_dir = Path(output_path) / f"{model_name}{ext}"
+        # Include precision in directory name to avoid cache collisions
+        # between different precisions sharing the same output_path.
+        precision_suffix = f"_{self._precision}" if self._is_quantized else ""
+        out_dir = Path(output_path) / f"{model_name}{precision_suffix}{ext}"
         if (out_dir / f"{model_name}.onnx").exists():
             return str(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -602,7 +604,7 @@ class Llama3_2_1B_PartBase(MultiGraphBaseModel):
         other_compile_options: str = "",
         device: Device | None = None,
     ) -> MultiGraphGroup[str]:
-        other_compile_options += " --quantize_full_type w8a16"
+        other_compile_options += " --quantize_full_type w8a16 --quantize_io"
         return super().get_hub_compile_options(
             target_runtime, precision, other_compile_options, device
         )
@@ -631,18 +633,19 @@ class Llama3_2_1B_PartBase(MultiGraphBaseModel):
             other_profile_options=other_profile_options,
         )
 
-    def get_input_spec(self) -> MultiGraphGroup[InputSpec]:
-        # Return one graph per sequence length so the genie bundle contains
-        # both ar128 (prompt processing) and ar1 (token generation) models.
-        # compile_model and link_model already iterate over multiple graphs.
-        ctx_len = self._presplit.context_length
+    def get_input_spec(
+        self,
+        context_length: list[int] = DEFAULT_EXPORT_CONTEXT_LENGTHS,
+        sequence_length: list[int] = DEFAULT_EXPORT_SEQUENCE_LENGTHS,
+    ) -> MultiGraphGroup[InputSpec]:
         specs: MultiGraphGroup[InputSpec] = MultiGraphGroup()
-        for seq_len in self._sequence_lengths:
-            inst = "token" if seq_len == 1 else "prompt"
-            graph_name = (
-                f"{inst}_ar{seq_len}_cl{ctx_len}_{self.part_id}_of_{NUM_SPLITS}"
-            )
-            specs[graph_name] = self._get_input_spec_for_instance(seq_len)
+        for ctx_len in context_length:
+            for seq_len in sequence_length:
+                inst = "token" if seq_len == 1 else "prompt"
+                graph_name = (
+                    f"{inst}_ar{seq_len}_cl{ctx_len}_{self.part_id}_of_{NUM_SPLITS}"
+                )
+                specs[graph_name] = self._get_input_spec_for_instance(seq_len, ctx_len)
         return specs
 
 
@@ -690,9 +693,9 @@ class FPSplitModelWrapper(_Llama3SplitForwardMixin, Llama3_2_1B_PreSplit):
 # ---------------------------------------------------------------------------
 
 
-@CollectionModel.add_component(Llama3_2_1B_Part1_Of_3, "llama3_2_1b_part1_of_3")
-@CollectionModel.add_component(Llama3_2_1B_Part2_Of_3, "llama3_2_1b_part2_of_3")
-@CollectionModel.add_component(Llama3_2_1B_Part3_Of_3, "llama3_2_1b_part3_of_3")
+@CollectionModel.add_component(Llama3_2_1B_Part1_Of_3, "part1_of_3", cli_args_prefix="")
+@CollectionModel.add_component(Llama3_2_1B_Part2_Of_3, "part2_of_3", cli_args_prefix="")
+@CollectionModel.add_component(Llama3_2_1B_Part3_Of_3, "part3_of_3", cli_args_prefix="")
 class Llama3_2_1B_Collection(MultiGraphPretrainedCollectionModel):
     """
     Unified Collection with 3 Parts for Llama 3.2 1B.
@@ -705,9 +708,6 @@ class Llama3_2_1B_Collection(MultiGraphPretrainedCollectionModel):
     def from_pretrained(
         cls,
         checkpoint: str | Path = "DEFAULT",
-        sequence_length: int | list[int] = DEFAULT_SEQUENCE_LENGTH,
-        context_length: int = DEFAULT_CONTEXT_LENGTH,
-        precision: Precision = DEFAULT_PRECISION,
         host_device: torch.device | None = None,
         _skip_quantsim_creation: bool = True,
         **kwargs: Any,
@@ -720,14 +720,6 @@ class Llama3_2_1B_Collection(MultiGraphPretrainedCollectionModel):
         checkpoint
             Path to checkpoint with ONNX + encodings, or ``"DEFAULT"``
             to create from HuggingFace.
-        sequence_length
-            Sequence length(s) for the model. Pass a list (e.g. [128, 1])
-            to produce multiple graphs per Part (prompt + token).
-        context_length
-            Context length for the model.
-        precision
-            Precision mode. Use Precision.float for FP, or a quantized
-            precision (e.g., Precision.w4a16) for quantized mode.
         host_device
             Device for computation.
         _skip_quantsim_creation
@@ -740,25 +732,10 @@ class Llama3_2_1B_Collection(MultiGraphPretrainedCollectionModel):
         Self
             The Collection with all 3 Parts.
         """
-        # Normalize to a list so callers can pass a single int or a list.
-        # The ONNX uses dynamic shapes, so one export covers all seq_lens;
-        # we use max() for the presplit instantiation (largest shape for ONNX
-        # export) and pass the full list to each Part so get_input_spec()
-        # emits one graph per seq_len (ar128 + ar1 for the genie bundle).
-        if isinstance(sequence_length, int):
-            sequence_lengths = [sequence_length]
-        else:
-            sequence_lengths = list(sequence_length)
-        presplit_seq_len = max(sequence_lengths)
-
         part_kwargs = dict(
             checkpoint=checkpoint,
-            sequence_length=presplit_seq_len,
-            context_length=context_length,
-            precision=precision,
             host_device=host_device,
             _skip_quantsim_creation=_skip_quantsim_creation,
-            sequence_lengths=sequence_lengths,
         )
         parts = [
             part_cls.from_pretrained(**part_kwargs)

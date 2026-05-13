@@ -44,6 +44,10 @@ from typing import Any, Optional, cast
 import qai_hub as hub
 from qai_hub_models.configs.tool_versions import ToolVersions
 from qai_hub_models.models.{{ model_name }} import Model, MODEL_ID
+{% if separate_quantize_script -%}
+from qai_hub_models.models.{{ model_name }} import DEFAULT_PRECISION
+from qai_hub_models.utils.checkpoint import CheckpointType
+{%- endif %}
 from qai_hub_models.utils.args import (
     export_parser,
     get_export_model_name,
@@ -675,7 +679,7 @@ def save_model(
 def export_model(
     device: hub.Device,
     {{- "\n    components: list[str] | None = None," if is_collection_model else "" }}
-    {%- if not is_precompiled  %}
+    {%- if not is_precompiled and not separate_quantize_script %}
     precision: Precision = {{ "Precision." + default_aihub_job_precision }},
     {%- endif %}
     {%- if can_use_quantize_job %}
@@ -728,7 +732,7 @@ def export_model(
         Each component is compiled and profiled separately.
         Defaults to all components of the CollectionModel if not specified.
     {%- endif %}
-    {%- if not is_precompiled  %}
+    {%- if not is_precompiled and not separate_quantize_script %}
     precision
         The precision to which this model should be quantized.
         Quantization is skipped if the precision is float.
@@ -803,6 +807,15 @@ def export_model(
         {%- endfilter %}
         * The path to the downloaded model folder (or zip), or None if one or more of: skip_downloading is True, fetch_static_assets is set, or AI Hub Workbench is not accessible
     """
+    {% if separate_quantize_script %}
+    checkpoint = additional_model_kwargs.get("checkpoint")
+    if checkpoint is not None:
+        precision = CheckpointType.from_checkpoint(checkpoint).precision(DEFAULT_PRECISION, checkpoint=checkpoint)
+    else:
+        precision = additional_model_kwargs.get("precision", DEFAULT_PRECISION)
+    additional_model_kwargs["precision"] = precision
+    {% endif %}
+
     model_name = {{ "MODEL_ID" if is_precompiled else "get_export_model_name(Model, MODEL_ID, precision, additional_model_kwargs)" }}
 
     output_path = Path(output_dir or Path.cwd() / "export_assets")
@@ -855,6 +868,8 @@ def export_model(
     {%- if is_precompiled %}
     print("Initializing model class")
     model = Model.from_precompiled()
+    {%- elif separate_quantize_script %}
+    model = Model.from_pretrained(**get_model_kwargs(Model, additional_model_kwargs))
     {%- else %}
     model = Model.from_pretrained(**get_model_kwargs(Model, dict(**additional_model_kwargs, precision=precision)))
     {%- endif %}
@@ -876,7 +891,10 @@ def export_model(
     )
     {%- else %}
     {%- if has_multi_graph %}
-    input_specs = model.get_input_spec()
+    first_component = next(iter(Model.component_classes))  # type: ignore[misc]
+    input_specs = model.get_input_spec(
+        **get_component_input_spec_kwargs(Model, first_component, additional_model_kwargs)
+    )
     {%- else %}
     input_specs: dict[str, InputSpec] = {
         name: model.components[name].get_input_spec(
@@ -1453,6 +1471,9 @@ def main() -> None:
         {{- "components=ALL_COMPONENTS," if has_components else "" -}}
         default_export_device="{{ default_device }}",
         {{- "force_fetch_static_assets=True," if freeze_perf_yaml else "" -}}
+        {%- if separate_quantize_script -%}
+        omit_precision=True,
+        {%- endif -%}
     )
     args = parser.parse_args()
     export_model(**vars(args))

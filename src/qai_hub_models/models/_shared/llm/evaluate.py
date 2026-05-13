@@ -16,13 +16,20 @@ from qai_hub_models.datasets import get_dataset_from_name
 from qai_hub_models.datasets.common import AugmentedLabelDataset, DatasetSplit
 from qai_hub_models.models._shared.llm.generator import LLM_Generator
 from qai_hub_models.models._shared.llm.model import (
+    DEFAULT_CONTEXT_LENGTH,
     DEFAULT_SEQUENCE_LENGTH,
     LLM_QNN,
     LLM_AIMETOnnx,
     LLMBase,
+    LLMDynamic_AIMETOnnx,
+    LLMDynamicBase,
 )
 from qai_hub_models.models.common import Precision
-from qai_hub_models.utils.args import get_model_cli_parser, get_model_kwargs
+from qai_hub_models.utils.args import (
+    add_input_spec_args,
+    get_model_cli_parser,
+    get_model_kwargs,
+)
 from qai_hub_models.utils.checkpoint import (
     CheckpointType,
 )
@@ -63,6 +70,8 @@ def evaluate(
     num_samples: int,
     task: str,
     kwargs: Mapping[str, Any],
+    prompt_sequence_length: int = DEFAULT_SEQUENCE_LENGTH,
+    context_length: int = DEFAULT_CONTEXT_LENGTH,
     skip_fp_model_eval: bool = False,
     vision_encoder_cls: Any = None,
     hf_repo_name: str | None = None,
@@ -86,10 +95,11 @@ def evaluate(
 
     is_default = str(kwargs["checkpoint"]).startswith("DEFAULT")
 
-    fp_model = fp_model_cls.from_pretrained(
-        sequence_length=kwargs["sequence_length"],
-        context_length=kwargs["context_length"],
-    ).to(torch.device("cpu"))
+    fp_kwargs: dict[str, Any] = {}
+    if not issubclass(fp_model_cls, LLMDynamicBase):
+        fp_kwargs["sequence_length"] = prompt_sequence_length
+        fp_kwargs["context_length"] = context_length
+    fp_model = fp_model_cls.from_pretrained(**fp_kwargs).to(torch.device("cpu"))
 
     model_cls: type[LLMBase | LLM_AIMETOnnx | LLM_QNN]
 
@@ -143,7 +153,7 @@ def evaluate(
         # to the ground truth of the eval data loader.
         assert fp_model_cls.EmbeddingClass is not None
         embedding = fp_model_cls.EmbeddingClass(
-            max_length=final_kwargs["context_length"],
+            max_length=context_length,
             config=fp_model.llm_config,
         )
 
@@ -177,6 +187,9 @@ def evaluate(
             gc.collect()
         torch.cuda.empty_cache()
 
+        if issubclass(model_cls, LLMDynamic_AIMETOnnx):
+            final_kwargs.pop("sequence_length", None)
+            final_kwargs.pop("context_length", None)
         model = model_cls.from_pretrained(**final_kwargs).to(host_device)
     else:
         model = fp_model.to(host_device)
@@ -189,7 +202,7 @@ def evaluate(
     if embedding is None:
         assert fp_model_cls.EmbeddingClass is not None
         embedding = fp_model_cls.EmbeddingClass(
-            max_length=final_kwargs["context_length"],
+            max_length=context_length,
             config=model.llm_config,
         )
 
@@ -249,6 +262,7 @@ def llm_evaluate(
         quantized_model_cls,
         suppress_help_arguments=["--host-device", "--fp-model", "--precision"],
     )
+    parser = add_input_spec_args(quantized_model_cls, parser)
     parser.add_argument(
         "--task",
         type=str,
@@ -282,10 +296,9 @@ def llm_evaluate(
     kwargs = dict(get_model_kwargs(quantized_model_cls, vars(args)))
 
     checkpoint_type = CheckpointType.from_checkpoint(kwargs["checkpoint"])
-
     if checkpoint_type == CheckpointType.GENIE_BUNDLE:
         # The NPU does not support the higher sequence length we use on GPU
-        kwargs["sequence_length"] = DEFAULT_SEQUENCE_LENGTH
+        args.sequence_length = min(args.sequence_length, DEFAULT_SEQUENCE_LENGTH)
 
     # Collect VLM image size: CLI args override the caller-provided default
     if vision_encoder_cls is not None:
@@ -304,6 +317,8 @@ def llm_evaluate(
         vision_encoder_cls=vision_encoder_cls,
         hf_repo_name=hf_repo_name,
         vlm_image_size=vlm_image_size,
+        prompt_sequence_length=args.sequence_length,
+        context_length=args.context_length,
     )
 
     print(formatted_accuracy)

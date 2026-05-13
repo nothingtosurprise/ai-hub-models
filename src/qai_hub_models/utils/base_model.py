@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import inspect
 import os
 import re
 import shutil
@@ -95,6 +96,7 @@ class CollectionModel(Generic[ComponentT]):
         cls,
         component_class: type[BaseModel | BasePrecompiledModel],
         component_name: str,
+        cli_args_prefix: str | None = None,  # Defaults to component_name
         subfolder_hf: str | None = None,
     ) -> Callable[[type[CollectionModelT]], type[CollectionModelT]]:
         """
@@ -111,6 +113,8 @@ class CollectionModel(Generic[ComponentT]):
             Component class to add to the CollectionModel.
         component_name
             Name the component.
+        cli_args_prefix
+            Name of the CLI argument prefix, with underscores (uses component name if None).
         subfolder_hf
             By default the same as component_name. Specify this
             only when Huggingface uses a different subfolder name than the desired
@@ -151,6 +155,9 @@ class CollectionModel(Generic[ComponentT]):
             # different repo without subfolders
             subfolder = subfolder_hf if subfolder_hf is not None else name
             component_class.default_subfolder = component_name  # type: ignore[union-attr]
+            component_class.cli_args_prefix = (  # type: ignore[union-attr]
+                cli_args_prefix if cli_args_prefix is not None else component_name
+            )
             component_class.default_subfolder_hf = subfolder  # type: ignore[union-attr]
             return subclass
 
@@ -909,6 +916,20 @@ class PretrainedCollectionModel(CollectionModel[BaseModel], FromPretrainedProtoc
     pass
 
 
+def _get_input_spec_params(
+    model_cls: type[BaseModel | BasePrecompiledModel],
+) -> dict[str, inspect.Parameter]:
+    """Return the non-self parameters of get_input_spec, ignoring variadic params (*args, **kwargs)."""
+    sig = inspect.signature(model_cls.get_input_spec)
+    return {
+        name: param
+        for name, param in sig.parameters.items()
+        if name != "self"
+        and param.kind
+        not in [inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD]
+    }
+
+
 class MultiGraphPretrainedCollectionModel(
     CollectionModel[BaseModel | MultiGraphBaseModel], FromPretrainedProtocol
 ):
@@ -916,6 +937,7 @@ class MultiGraphPretrainedCollectionModel(
 
     def get_input_spec(
         self,
+        **kwargs: Any,
     ) -> MultiGraphComponentGroup[InputSpec]:
         """Return input specifications for every component and graph.
 
@@ -924,6 +946,12 @@ class MultiGraphPretrainedCollectionModel(
         For plain ``BaseModel`` components, a single-entry is
         synthesized with graph_name=None.
 
+        Parameters
+        ----------
+        **kwargs
+            Forwarded to each component's ``get_input_spec()``, filtered
+            to only include parameters that the component accepts.
+
         Returns
         -------
         MultiGraphComponentGroup[InputSpec]
@@ -931,12 +959,14 @@ class MultiGraphPretrainedCollectionModel(
         """
         out: MultiGraphComponentGroup[InputSpec] = MultiGraphComponentGroup()
         for comp_name, component in self.components.items():
+            accepted = _get_input_spec_params(type(component))
+            comp_kwargs = {k: v for k, v in kwargs.items() if k in accepted}
             if isinstance(component, MultiGraphBaseModel):
-                for graph_name, spec in component.get_input_spec().items():
+                for graph_name, spec in component.get_input_spec(**comp_kwargs).items():
                     out.component_graph_names[(comp_name, graph_name)] = spec
             else:
-                out.component_graph_names[(comp_name, None)] = (
-                    component.get_input_spec()
+                out.component_graph_names[(comp_name, None)] = component.get_input_spec(
+                    **comp_kwargs
                 )
         return out
 

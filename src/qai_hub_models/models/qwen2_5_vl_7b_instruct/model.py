@@ -326,7 +326,7 @@ class Qwen2_5_VL_7B_QuantizablePreSplit(  # type: ignore[misc]
     supported_precisions = SUPPORTED_PRECISIONS
     default_precision = DEFAULT_PRECISION
 
-    # PreSplitOnnxMixin config
+    # DynamicPreSplitOnnxMixin config
     split_model_name = SPLIT_MODEL_NAME
     num_splits = NUM_SPLITS
     num_layers_per_split = NUM_LAYERS_PER_SPLIT
@@ -840,8 +840,6 @@ class Qwen2_5_VL_7B_PartBase(BaseModel):
             )
         else:
             presplit = Qwen2_5_VL_7B_QuantizablePreSplit.from_pretrained(
-                sequence_length=sequence_length,
-                context_length=context_length,
                 precision=precision,
                 checkpoint=checkpoint,
                 host_device=host_device,

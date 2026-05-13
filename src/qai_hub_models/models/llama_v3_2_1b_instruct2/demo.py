@@ -12,7 +12,7 @@ from qai_hub_models.models.llama_v3_2_1b_instruct2 import MODEL_ID
 from qai_hub_models.models.llama_v3_2_1b_instruct2.model import (
     HF_REPO_NAME,
     SUPPORTED_PRECISIONS,
-    FPSplitModelWrapper,
+    Llama3_2_1B_PreSplit,
     QuantizedSplitModelWrapper,
 )
 from qai_hub_models.utils.checkpoint import CheckpointSpec
@@ -22,7 +22,7 @@ HF_REPO_URL = f"https://huggingface.co/{HF_REPO_NAME}"
 
 def llama_3_2_1b_chat_demo(
     model_cls: type[LLM_AIMETOnnx] = QuantizedSplitModelWrapper,
-    fp_model_cls: type[LLMBase] = FPSplitModelWrapper,
+    fp_model_cls: type[LLMBase] = Llama3_2_1B_PreSplit,
     qnn_model_cls: type[LLM_QNN] = LLM_QNN,
     model_id: str = MODEL_ID,
     end_tokens: set = END_TOKENS,

@@ -6,6 +6,9 @@ from __future__ import annotations
 
 import argparse
 import gc
+import json
+import sys
+from pathlib import Path
 from typing import Any
 
 import torch
@@ -14,14 +17,33 @@ from qai_hub_models.models._shared.llm.common import TORCH_DYNAMIC_SHAPE_MIN_VER
 from qai_hub_models.models._shared.llm.model import (
     DEFAULT_CALIBRATION_SEQ_LEN,
     DEFAULT_CONTEXT_LENGTH,
+    DynamicQuantizablePreSplitMixin,
     LLM_AIMETOnnx,
     LLMBase,
-    QuantizablePreSplitMixin,
+    LLMDynamicBase,
 )
 from qai_hub_models.models.common import Precision
 from qai_hub_models.utils.args import get_quantize_action_with_default
 from qai_hub_models.utils.dataset_util import dataset_entries_to_dataloader
 from qai_hub_models.utils.version_helpers import ensure_supported_version
+
+_SERIALIZABLE_TYPES = (str, int, float, bool)
+
+
+def save_command_args(
+    path: Path, args: argparse.Namespace, cli_args: list[str]
+) -> None:
+    """Save parsed args and raw command line to a JSON file."""
+    data: dict[str, Any] = {"raw_args": cli_args}
+    for k, v in vars(args).items():
+        if v is None:
+            continue
+        if isinstance(v, _SERIALIZABLE_TYPES):
+            data[k] = v
+        elif isinstance(v, Precision):
+            data[k] = str(v)
+    with open(path, "w") as f:
+        json.dump(data, f, indent=4, sort_keys=True)
 
 
 def quantize(
@@ -56,11 +78,11 @@ def quantize(
             )
 
     # Create the floating point model
-    extra: dict[str, Any] = dict(
-        sequence_length=seq_len,
-        context_length=context_length,
-    )
-    # DEFAULT* checkpoints are resolved by QuantizablePreSplitMixin, not the FP model.
+    extra: dict[str, Any] = {}
+    if not issubclass(fp_model_cls, LLMDynamicBase):
+        extra["sequence_length"] = seq_len
+        extra["context_length"] = context_length
+    # DEFAULT* checkpoints are resolved by DynamicQuantizablePreSplitMixin, not the FP model.
     fp_checkpoint = checkpoint
     if isinstance(checkpoint, str) and checkpoint.startswith("DEFAULT"):
         fp_checkpoint = None
@@ -70,16 +92,18 @@ def quantize(
     fp_model = fp_model_cls.from_pretrained(**extra).to(torch.device("cpu")).eval()
     torch.cuda.empty_cache()
 
-    model_quant = quantized_model_cls.from_pretrained(
-        context_length=context_length,
-        sequence_length=seq_len,
+    quant_extra: dict[str, Any] = dict(
         precision=precision,
         checkpoint=checkpoint,
         host_device=device,
         fp_model=fp_model,
-        use_dynamic_shapes=use_dynamic_shapes,
         _skip_quantsim_creation=False,
     )
+    if not issubclass(quantized_model_cls, DynamicQuantizablePreSplitMixin):
+        quant_extra["context_length"] = context_length
+        quant_extra["sequence_length"] = seq_len
+        quant_extra["use_dynamic_shapes"] = use_dynamic_shapes
+    model_quant = quantized_model_cls.from_pretrained(**quant_extra)
 
     # Determine how many samples we need
     num_max_samples = 0
@@ -114,7 +138,7 @@ def quantize(
 
     save_kwargs: dict[str, Any] = dict(fp_model=fp_model)
     # PreSplit models always use dynamic shapes; the mixin handles it internally.
-    if not issubclass(quantized_model_cls, QuantizablePreSplitMixin):
+    if not issubclass(quantized_model_cls, DynamicQuantizablePreSplitMixin):
         save_kwargs["use_dynamic_shapes"] = use_dynamic_shapes
     model_quant.save_calibrated_checkpoint(output_dir, **save_kwargs)
     model_quant = model_quant.to("cpu")
@@ -204,7 +228,8 @@ def llm_quantize(
         default=False,
         help=argparse.SUPPRESS,
     )
-    args = parser.parse_args()
+    cli_args = sys.argv[1:]
+    args = parser.parse_args(cli_args)
 
     quantize(
         quantized_model_cls=quantized_model_cls,
@@ -223,6 +248,9 @@ def llm_quantize(
         ada_scale_num_iterations=args.ada_scale_num_iterations,
         use_dynamic_shapes=args.use_dynamic_shapes,
     )
+
+    save_command_args(Path(args.output_dir) / "args.json", args, cli_args)
+
     print("Quantization completed successfully.")
     print()
     print(
