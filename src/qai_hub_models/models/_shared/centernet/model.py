@@ -40,6 +40,7 @@ class CenterNet(BaseModel):
             num_layers=34,
             heads=heads,
             head_conv=256,
+            down_ratio=4,
         )
         model = cast(Self, load_model(model, ckpt_path))
         model.eval()

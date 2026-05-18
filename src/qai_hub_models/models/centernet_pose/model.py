@@ -33,7 +33,6 @@ MODEL_ID = __name__.split(".")[-2]
 MODEL_ASSET_VERSION = 1
 
 IMAGE = CachedWebModelAsset.from_asset_store(MODEL_ID, MODEL_ASSET_VERSION, "image.jpg")
-
 # checkpoint download from https://drive.google.com/file/d/1mC2PAQT_RuHi_9ZMZgkt4rg7BSY2_Lkd
 DEFAULT_WEIGHTS = CachedWebModelAsset.from_asset_store(
     MODEL_ID,
@@ -134,6 +133,7 @@ class CenterNetPose(CenterNet):
         hm, wh, hps, reg, hm_hp, hm_offset = self.model(image)[-1].values()
         hm = torch.sigmoid(hm)
         hm_hp = torch.sigmoid(hm_hp)
+
         return hm, wh, hps, reg, hm_hp, hm_offset
 
     def get_output_names(self) -> list[str]:
@@ -142,8 +142,8 @@ class CenterNetPose(CenterNet):
     def get_input_spec(
         self,
         batch_size: int = 1,
-        height: int = 256,
-        width: int = 256,
+        height: int = 512,
+        width: int = 512,
     ) -> InputSpec:
         """
         Returns the input specification (name -> (shape, type). This can be
@@ -177,17 +177,15 @@ class CenterNetPose(CenterNet):
         }
 
     def get_evaluator(self) -> BaseEvaluator:
-        return CenternetPoseEvaluator(
-            decode=self.decode,
-        )
+        return CenternetPoseEvaluator(decode=self.decode)
 
     @staticmethod
     def eval_datasets() -> list[str]:
-        return ["cocobody"]
+        return ["coco_centernet"]
 
     @staticmethod
     def calibration_dataset_name() -> str:
-        return "cocobody"
+        return "coco_centernet"
 
     def get_channel_last_inputs(self) -> list[str]:
         return ["image"]
