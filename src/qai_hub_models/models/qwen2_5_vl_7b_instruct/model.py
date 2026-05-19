@@ -52,6 +52,7 @@ from qai_hub_models.models._shared.llm.model import (
 from qai_hub_models.models._shared.llm.model import (
     DEFAULT_EXPORT_SEQUENCE_LENGTHS as GLOBAL_DEFAULT_EXPORT_SEQUENCE_LENGTHS,
 )
+from qai_hub_models.models._shared.llm.onnx_optimize import optimize_onnx_model
 from qai_hub_models.models._shared.qwen2_vl.model import (
     Qwen2VLDynamic_AIMETOnnx,
     Qwen2VLTextBase,
@@ -718,12 +719,13 @@ class Qwen2_5_VL_7B_VisionEncoder(Qwen2VLVisionEncoder):
             output_names=["image_features"],
             opset_version=18,
             dynamo=True,
-            optimize=True,
+            optimize=False,
             dynamic_shapes=dynamic_shapes,
         )
 
         onnx_model = onnx_lib.load(onnx_path)
         tmp_dir.cleanup()
+        onnx_model = optimize_onnx_model(onnx_model)
 
         default_config = get_aimet_config_path("default_config_llama")
         providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]

@@ -6,6 +6,8 @@ sentencepiece==0.2.1
 psutil==6.1.1; sys_platform != 'win32'
 wmi==1.5.1; sys_platform == 'win32'
 onnx==1.17.0
+onnxscript==0.7.0
+onnx-ir==0.2.1
 # GPU torch should only be used for running AIMET-ONNX, not for exporting
 # from torch to ONNX, as that would produce a different ONNX graph than
 # torch CPU exported ONNX.

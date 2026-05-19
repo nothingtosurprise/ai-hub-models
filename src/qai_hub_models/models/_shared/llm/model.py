@@ -81,6 +81,7 @@ from qai_hub_models.models._shared.llm.common import (
     LLMIOType,
     cleanup,
 )
+from qai_hub_models.models._shared.llm.onnx_optimize import optimize_onnx_model
 from qai_hub_models.models._shared.llm.sha_dynamic_kvcache import (
     SHADynamicCacheNewValueOnly,
 )
@@ -385,7 +386,7 @@ def get_onnx_model(
             extra = {
                 "opset_version": 18,
                 "dynamo": True,
-                "optimize": True,
+                "optimize": False,
                 "dynamic_shapes": dynamic_shapes,
             }
         else:
@@ -414,6 +415,9 @@ def get_onnx_model(
             os.remove(file)
         for file in glob.glob(os.path.join(os.path.dirname(path), "onnx__*")):
             os.remove(file)
+
+        if use_dynamic_shapes:
+            onnx_model = optimize_onnx_model(onnx_model)
 
         onnx.save_model(
             onnx_model,
