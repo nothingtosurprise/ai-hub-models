@@ -1,5 +1,4 @@
 lerobot[transformers-dep]==0.4.1
-transformers @ git+https://github.com/huggingface/transformers.git@fix/lerobot_openpi
 matplotlib==3.10.7
 aimet-onnx==2.26.0; sys_platform == 'linux' and python_version == "3.10"
 onnxsim==0.5.0
