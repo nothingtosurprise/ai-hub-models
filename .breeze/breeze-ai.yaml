@@ -9,6 +9,28 @@ agents:
     #   domains:
     #     - edgewise
 
+  # Nightly Failure Analysis Agent
+  nightly-analyst:
+    enabled: true
+    custom_instructions: |
+      You analyze nightly CI failures for QAI Hub Models.
+      Follow .claude/skills/nightly-analyze/SKILL.md exactly.
+      Use .claude/triage/ knowledge base for error pattern recognition and team routing.
+      Post findings as a structured comment on the auto-filed GitHub issue in qcom-ai-hub/tetracode.
+      IMPORTANT: Soft recommendations only — never auto-assign or auto-label issues.
+      IMPORTANT: Never hardcode a czar name — the czar rotates weekly.
+
+  # Weekly Knowledge Base Update Agent
+  kb-weekly-update:
+    enabled: true
+    custom_instructions: |
+      You maintain the triage knowledge base for QAI Hub Models nightly CI.
+      Follow .claude/skills/kb-weekly-update/SKILL.md exactly.
+      Review resolved nightly issues, evaluate triage accuracy, and open a PR
+      with knowledge base updates to .claude/triage/ files.
+      IMPORTANT: NEVER remove existing error patterns or team entries from .claude/triage/ files — only add or modify.
+      IMPORTANT: Flag low-confidence updates with "(low confidence — verify)".
+
   # PR Review Agent
   pr-review:
     enabled: true

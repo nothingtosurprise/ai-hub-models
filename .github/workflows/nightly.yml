@@ -230,6 +230,8 @@ jobs:
         name: Notify Failure
         needs: [run-tests310, run-tests311, run-tests312, run-tests313, scorecard-integration-test, run-sync-public-website, generate_test_summary]
         runs-on: [tetra-ubuntu-2204, self-hosted]
+        outputs:
+            issue_urls: ${{ steps.create-github-issues.outputs.issue_urls }}
         permissions:
             contents: read
             issues: write
@@ -304,7 +306,6 @@ jobs:
             # block scalars when substituted into the Slack payload.
             echo "issue_urls=${ISSUE_URLS//$'\n'/\\n}" >> "$GITHUB_OUTPUT"
 
-        # Send result to Slack channel #ai-hub-models
         - name: Send Slack Notification
           id: slack_notification
           uses: slackapi/slack-github-action@v3
@@ -314,3 +315,63 @@ jobs:
             payload: |
               channel: "C05LEEK0N8J"
               text: "🚨 QAI Hub Models Nightly Failed\n\nWorkflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}\n\nGitHub Issues:\n${{ steps.create-github-issues.outputs.issue_urls }}"
+
+    breeze-nightly-analysis:
+      name: AI Nightly Failure Analysis
+      needs: [generate_test_summary, notify_failure]
+      if: ${{ failure() && github.event_name == 'schedule' }}
+      uses: qcom-eng-Nimbus/custom-templates/.github/workflows/breeze-agent-reusable.yaml@main
+      secrets: inherit
+      with:
+        agent_name: "nightly-analyst"
+        claude_model: "us.anthropic.claude-opus-4-6-v1"
+        github_token_scope: organization
+        base_allowed_tools: >-
+          Read,
+          Bash(gh:*),
+          Bash(cat:*),
+          Bash(git:*),
+          Bash(python3:*),
+          Bash(find:*),
+          Bash(ls:*),
+          Bash(head:*),
+          Bash(tail:*),
+          Bash(wc:*),
+          Bash(grep:*),
+          Bash(mkdir:*)
+        prompt: |
+          The QAI Hub Models nightly tests have failed. Analyze the failures and post findings.
+
+          Read .claude/skills/nightly-analyze/SKILL.md and follow its process exactly.
+
+          Context variables for the skill:
+          - RUN_ID: ${{ github.run_id }}
+          - REPO: ${{ github.repository }}
+          - RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          - ISSUE_URLS: ${{ needs.notify_failure.outputs.issue_urls }}
+        system_prompt: |
+          You are Breeze AI, a nightly CI failure analyst for QAI Hub Models.
+          Your job: analyze test failures, find breaking commits, propose fixes,
+          and soft-triage to the right team. You NEVER auto-assign or auto-label.
+
+          IMPORTANT: You have a 40-turn limit. Be efficient:
+          - Read SKILL.md first — it contains ALL instructions including triage rules
+          - Do NOT read .claude/triage/ files separately — triage info is inlined in SKILL.md
+          - Batch gh API calls — never loop over commits one-by-one
+          - Target: finish in under 25 turns
+
+          Environment:
+          - RUN_ID: ${{ github.run_id }}
+          - REPO: ${{ github.repository }}
+          - RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          - ISSUE_URLS: ${{ needs.notify_failure.outputs.issue_urls }}
+          - Full gh CLI access (authenticated) and complete repo checkout
+          - Test results artifact: "nightly-test-results"
+          - Issues filed in qcom-ai-hub/tetracode with labels p0, ai-hub-models
+          - Issue title pattern: "[QAIHM Nightly] Test Failures - YYYY-MM-DD" or "[QAIHM Nightly] Workbench Job Failures - YYYY-MM-DD"
+        bot_name: "breeze-code-action[bot]"
+        max_turns: 40
+        track_progress: false
+        show_full_output: true
+        additional_permissions: "actions: read"
+        sub_category: "nightly-analysis"
