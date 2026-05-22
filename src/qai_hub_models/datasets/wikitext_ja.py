@@ -20,3 +20,7 @@ class WikiText_Japanese(WikiText):
         raise ValueError(
             "Wikitext Japanese dataset currently only supports `test` and `train` split"
         )
+
+    @classmethod
+    def dataset_name(cls) -> str:
+        return "wikitext_ja"

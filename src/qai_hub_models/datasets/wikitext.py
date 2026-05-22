@@ -97,3 +97,7 @@ class WikiText(BaseDataset):
             link="https://huggingface.co/datasets/mindchain/wikitext2",
             split_description="test split",
         )
+
+    @classmethod
+    def dataset_name(cls) -> str:
+        return "wikitext"

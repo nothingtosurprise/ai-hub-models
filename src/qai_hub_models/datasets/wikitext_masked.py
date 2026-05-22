@@ -139,6 +139,10 @@ class WikiTextMasked(BaseDataset):
             split_description="wikitext-2-raw-v1 validation split",
         )
 
+    @classmethod
+    def dataset_name(cls) -> str:
+        return "wikitext_masked"
+
 
 class ElectraWikiTextMasked(WikiTextMasked):
     """WikiTextMasked variant for the ELECTRA discriminator.
@@ -158,3 +162,7 @@ class ElectraWikiTextMasked(WikiTextMasked):
     ) -> tuple[tuple[torch.Tensor, torch.Tensor], torch.Tensor]:
         (input_tokens, attention_masks, mask_indices), _label = super().__getitem__(idx)
         return (input_tokens, attention_masks), mask_indices
+
+    @classmethod
+    def dataset_name(cls) -> str:
+        return "electra_wikitext_masked"

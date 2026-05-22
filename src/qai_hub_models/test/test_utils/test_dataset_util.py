@@ -60,8 +60,6 @@ def test_dataset_entries_length_mismatch() -> None:
         ("NYUV2Dataset", "nyuv2"),
         ("EG1800SegmentationDataset", "eg1800_segmentation"),
         ("Imagenet_256Dataset", "imagenet_256"),
-        ("WikiText", "wiki_text"),
-        ("WikiText_Japanese", "wiki_text_japanese"),
         ("MMMLU_AR", "mmmlu_ar"),
         ("ImagenetDataset", "imagenet"),
         ("ImagenetteDataset", "imagenette"),
