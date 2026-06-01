@@ -29,6 +29,7 @@ If the traceback points to our code, route to `ai-hub-models`.
 | Errors in `scorecard/` | `scorecard/*.py` | `ai-hub-models` | Scorecard infrastructure — execution_helpers, collect_results, etc. |
 | "Install QAIHM[dev,<model>] (wheel) failed" | Model's `requirements.txt` | `ai-hub-models` | Dependency doesn't have wheels for the CI Python version or platform. Route to model owner. |
 | Codegen/template errors | `scripts/templates/*.j2` | `ai-hub-models` | Jinja template rendering failure in codegen. |
+| "Check for code-gen changes" pre-commit failure | `scripts/run_codegen.py` | `ai-hub-models` | Committed code-gen output is stale. Re-run `run_codegen.py` for the affected model. |
 
 **Key principle:** If the stack trace is in `qai_hub_models/`, it's almost always `ai-hub-models` regardless of which runtime or compiler is mentioned in the error message.
 
@@ -65,12 +66,17 @@ If the traceback points to our code, route to `ai-hub-models`.
 | "[Scorecard] 2x+ Regressions Detected" | `P1, ai-hub-models` | Auto-filed by regression detection. Triaged by splitting into per-model sub-issues. |
 
 ### Transient / Sporadic Failures (No code fix needed)
+
+**Important:** Before classifying a GitHub 5xx as transient, check whether the URL recently changed (repo transferred, branch renamed). Persistent 502s on a single URL with the rest of the test suite passing = stale URL, NOT a transient outage. See Example 19.
+
 | Error Signature | Label | Notes |
 |----------------|-------|-------|
 | `images.cocodataset.org` connection timeout/reset | Sporadic | External dataset host. Resolves within hours. Re-run. |
 | Imagenet download SSL error or timeout | Sporadic | External dataset. SSL cert rotation or network blip. |
 | HuggingFace `HTTPError 429` or connection timeout | Sporadic | Rate limited or HF outage. Re-run after 30 min. |
-| `git clone` timeout / GitHub API 5xx | Sporadic | Transient GitHub connectivity. Re-run. |
+| `git clone` timeout / GitHub API 5xx (multiple unrelated URLs) | Sporadic | Transient GitHub connectivity. Re-run. |
+| GitHub 502 on ONE specific URL (license, model source) + other tests pass | `ai-hub-models` | **NOT transient.** Repo was likely transferred/renamed. Fix the URL. See Example 19. |
+| `An action could not be found at the URI` + `codeload.github.com` | Sporadic | GitHub Actions CDN outage. All affected jobs share same error at "Set up job" step. Re-run. |
 | Qualcomm internal network / proxy SSL failure | Sporadic | Internal network blip. Re-run. |
 | `KeyError: 'Unable to synchronously open object'` | Sporadic | Corrupted HDF5 on CI machine. Re-run or clear cache. |
 | "Internal compiler error" + "status code 500" + "CompleteMultipartUpload" | `Cloud services` | Transient S3 multipart upload failure. Re-run. |
@@ -93,6 +99,7 @@ If the traceback points to our code, route to `ai-hub-models`.
 | QAIRT version not found / `hub.get_devices()` error after version removal | `ai-hub-models` | Old QAIRT version dropped from workbench. Upgrade pin. |
 | Third-party model library API change (ultralytics, etc.) | `ai-hub-models` | Library updated, model code needs adapting. |
 | Workbench client private API change (config class reordered) | `ai-hub-models` | Private API changed. Update client usage. |
+| GitHub repo transferred → old URL returns persistent 502 | `ai-hub-models` | Update URL in info.yaml or `_info_yaml_enums.py`. NOT a transient failure. |
 
 ## MEDIUM Confidence Patterns
 
@@ -109,6 +116,7 @@ If the traceback points to our code, route to `ai-hub-models`.
 |----------------|-------------|----------------|
 | "accuracy" + model name | `ai-hub-models` | Scorecard accuracy threshold violation. |
 | "fails on all runtimes" | `ai-hub-models` | Check if model was recently updated. |
+| Model test assertion failure (expected vs actual output mismatch) | `ai-hub-models` | Check if S3 test assets or model weights were updated without updating expected values. |
 
 ### Quantization / AIMET Issues
 | Error Signature | Likely Label | Disambiguation |

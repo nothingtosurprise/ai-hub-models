@@ -166,3 +166,35 @@ Exception: If a link failure is caused by our code sending the wrong input (e.g.
 
 ### Don't assign nightly failures to a specific person
 The czar rotates weekly. Assign to the `ai-hub-models` label and let the current czar pick up.
+
+## Example 19: GitHub 502 on License URL — NOT Transient (Repo Transfer)
+**Issue:** tetracode#19559 "[QAIHM Nightly] Test Failures - 2026-05-29"
+- **Error:** `test_info_yaml` — `llama_v2_7b_chat` license URL unreachable (GitHub 502, "too many 502 error responses")
+- **Agent triage:** Classified as transient GitHub 502 — suggested re-run
+- **Actual fix:** PR #3410 updated the URL from `facebookresearch/llama` to `meta-llama/llama` (repo was transferred)
+- **WRONG triage:** "Sporadic — transient GitHub connectivity. Re-run."
+- **CORRECT triage:** `ai-hub-models` — The repo was transferred; old URL redirects but sometimes returns 502 under load. Fix the URL.
+- **Key signal:** Only ONE URL fails, rest of test suite passes. Transient 502 would affect multiple GitHub URLs simultaneously.
+- **Confidence:** HIGH
+- **Lesson:** A URL with redirect hops (e.g. transferred repo) is more vulnerable to GitHub 5xx flake. If a single GitHub URL keeps 502'ing while other GitHub URLs work, check whether the URL redirects — pointing at the canonical URL drops the hop and reduces exposure. Re-run alone is not enough.
+
+## Example 20: S3 Test Asset Change Causing Model Test Assertion Failure
+**Issue:** tetracode#19498 "[QAIHM Nightly] Test Failures - 2026-05-27"
+- **Error:** `trocr::test_predict_text_from_image` — model produces completely wrong text vs expected
+- **Agent triage:** Suspected PR #3359 (serialize() refactor) as HIGH — first commit after last passing
+- **Actual fix:** Test images on S3 were replaced without updating expected values (human confirmed)
+- **WRONG triage:** Blame the serialize() PR (code change)
+- **CORRECT triage:** `ai-hub-models` — S3 test assets were changed out-of-band. No code change caused this.
+- **Key signal:** Cross-version failure (py3.10, 3.11, 3.13 all fail identically) + model produces radically different output (not a subtle regression) = input data changed, not model logic
+- **Confidence:** HIGH
+- **Lesson:** When a model test produces wildly different output across ALL Python versions simultaneously, and the error is in the assertion (expected vs actual), check whether test assets (images, reference data on S3) were modified. Git blame won't show this since assets live outside the repo.
+
+## Example 21: GitHub Actions CDN Outage — Pure Transient
+**Issue:** tetracode#19449 "[QAIHM Nightly] Test Failures - 2026-05-26"
+- **Error:** 12 jobs failed at "Set up job" step — `An action could not be found at the URI https://codeload.github.com/actions/checkout/tar.gz/...`
+- **Agent triage:** Correctly identified as transient GitHub Actions CDN outage. No code fix needed.
+- **Labels:** `P0, ai-hub-models` (auto-filed)
+- **Resolution:** Re-run. Also PR #3380 added logic to avoid filing false P0 "Workbench Job Failures" issues when verify jobs crash before checking workbench jobs.
+- **Key signal:** ALL failed jobs have identical "Set up job" error + `codeload.github.com` in URL + some Python versions passed (timing-dependent)
+- **Confidence:** HIGH
+- **Lesson:** When multiple jobs fail at the "Set up job" step with `codeload.github.com` errors, it's always a GitHub CDN outage. The related tetracode#19448 (Workbench Job Failures) was a false alarm — no workbench jobs actually ran.
