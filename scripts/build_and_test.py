@@ -374,9 +374,11 @@ class TaskLibrary:
         Configuration is passed via environment variables:
         - QAIHM_LLM_MODELS: Comma-separated model IDs, or "all"
         - QAIHM_TEST_DEVICES: Comma-separated device names
-        - LLM_CONTEXT_LENGTH: Context length (default: 4096)
         - QAIRT_SDK_PATH: Path to QAIRT SDK zip
         - QDC_API_TOKEN: QDC API token
+
+        Pre-compiled genie bundles are fetched from each model's
+        release-assets.yaml.
         """
         return plan.add_step(
             step_id,

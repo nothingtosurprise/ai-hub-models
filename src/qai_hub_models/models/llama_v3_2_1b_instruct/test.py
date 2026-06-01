@@ -27,7 +27,6 @@ from qai_hub_models.models._shared.llm.perf_collection import (
     LLMPerfConfig,
     get_llm_perf_parametrization,
 )
-from qai_hub_models.models._shared.llm.test import CompileJobCache
 from qai_hub_models.models.llama_v3_2_1b_instruct import Model
 from qai_hub_models.models.llama_v3_2_1b_instruct.demo import llama_3_2_1b_chat_demo
 from qai_hub_models.models.llama_v3_2_1b_instruct.export import (
@@ -35,9 +34,7 @@ from qai_hub_models.models.llama_v3_2_1b_instruct.export import (
 )
 from qai_hub_models.models.llama_v3_2_1b_instruct.model import (
     HF_REPO_NAME,
-    MODEL_ASSET_VERSION,
     MODEL_ID,
-    NUM_SPLITS,
     FPSplitModelWrapper,
     Llama3_2_1B_PreSplit,
     Llama3_2_1B_QuantizablePreSplit,
@@ -399,22 +396,15 @@ def llm_perf_config() -> LLMPerfConfig:
     return LLMPerfConfig.from_environment()
 
 
-@pytest.fixture(scope="session")
-def compile_job_cache() -> CompileJobCache:
-    return CompileJobCache()
-
-
 @pytest.mark.llm_perf
 @pytest.mark.skipif(
-    not torch.cuda.is_available()
-    or not importlib.util.find_spec("qualcomm_device_cloud_sdk"),
-    reason="This test requires GPU and the qualcomm_device_cloud_sdk package.",
+    not importlib.util.find_spec("qualcomm_device_cloud_sdk"),
+    reason="This test requires the qualcomm_device_cloud_sdk package.",
 )
 @pytest.mark.parametrize(("precision", "device"), _get_llm_perf_params())
 def test_llm_perf(
     precision: Precision,
     device: ScorecardDevice,
-    compile_job_cache: CompileJobCache,
     llm_perf_config: LLMPerfConfig,
 ) -> None:
     Llama3_2_1B_PreSplit.release()
@@ -424,17 +414,9 @@ def test_llm_perf(
 
     tps, ttft, prefill_tps = test.run_llm_perf_test(
         model_id=MODEL_ID,
-        export_model_func=export_model,
         device=device,
         precision=precision,
-        compile_job_cache=compile_job_cache,
         output_dir=test.GENIE_BUNDLES_ROOT,
-        model_cls=Llama3_2_1B_QuantizablePreSplit,
-        model_asset_version=MODEL_ASSET_VERSION,
-        num_splits=NUM_SPLITS,
-        export_context_lengths=llm_perf_config.export_context_lengths,
-        export_sequence_lengths=llm_perf_config.export_sequence_lengths,
-        fp_model_cls=FPSplitModelWrapper,
         qairt_sdk_path=llm_perf_config.qairt_sdk_path,
         skip_perf_update=llm_perf_config.skip_perf_update,
     )

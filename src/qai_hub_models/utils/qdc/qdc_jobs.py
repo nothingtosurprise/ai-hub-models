@@ -48,15 +48,39 @@ QDC_JOB_NAME_LIMIT = 32
 # Number of consecutive errors tolerated when polling status (absorbs transient
 # network blips like DNS resolution failures); a real error still surfaces after this.
 STATUS_POLL_MAX_RETRIES = 5
+# HTTP status codes that the QDC SDK can surface transiently on status polling.
+# The SDK raises a bare Exception with the code embedded in the message (e.g.
+# "failed with status code 403 and message: Invalid Credentials"), so we match
+# on the message. 403s have been observed intermittently on otherwise-valid
+# credentials; 429/5xx are the usual rate-limit / server-side blips.
+_RETRYABLE_STATUS_CODES = (403, 429, 500, 502, 503, 504)
+
+
+def _is_retryable_status_error(err: Exception) -> bool:
+    """True if err is a QDC SDK status-code error we should retry."""
+    message = str(err)
+    return any(f"status code {code}" in message for code in _RETRYABLE_STATUS_CODES)
 
 
 def _get_job_status_with_retry(client: object, job_id: str) -> str:
-    """Poll job status, retrying through transient errors (e.g. DNS failures)."""
+    """Poll job status, retrying through transient errors.
+
+    Covers transient network blips (DNS resolution failures, dropped
+    connections) as well as transient HTTP status errors the QDC SDK raises
+    as a bare Exception (e.g. an intermittent 403 / 429 / 5xx). A genuinely
+    fatal error still surfaces after STATUS_POLL_MAX_RETRIES attempts.
+    """
     for attempt in range(STATUS_POLL_MAX_RETRIES):
         try:
             return qdc_api.get_job_status(client, job_id)
         except (OSError, ConnectionError, TimeoutError):  # noqa: PERF203
             if attempt == STATUS_POLL_MAX_RETRIES - 1:
+                raise
+            time.sleep(POLL_INTERVAL)
+        except Exception as err:
+            if not _is_retryable_status_error(err) or (
+                attempt == STATUS_POLL_MAX_RETRIES - 1
+            ):
                 raise
             time.sleep(POLL_INTERVAL)
     raise AssertionError("unreachable")  # loop either returns or raises

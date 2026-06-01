@@ -18,7 +18,6 @@ from qai_hub_models.scorecard.utils.testing import make_cached_from_pretrained_f
 
 if TYPE_CHECKING:
     from qai_hub_models.models._shared.llm.perf_collection import LLMPerfConfig
-    from qai_hub_models.models._shared.llm.test import CompileJobCache
 
 
 # Instantiate the model only once for all tests.
@@ -37,10 +36,3 @@ def llm_perf_config() -> LLMPerfConfig:
     from qai_hub_models.models._shared.llm.perf_collection import LLMPerfConfig
 
     return LLMPerfConfig.from_environment()
-
-
-@pytest.fixture(scope="session")
-def compile_job_cache() -> CompileJobCache:
-    from qai_hub_models.models._shared.llm.test import CompileJobCache
-
-    return CompileJobCache()

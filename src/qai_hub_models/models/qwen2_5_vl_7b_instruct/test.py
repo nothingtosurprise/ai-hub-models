@@ -15,28 +15,20 @@ from qai_hub_models.models._shared.llm import test
 from qai_hub_models.models._shared.llm.evaluate import evaluate
 from qai_hub_models.models._shared.llm.model import (
     DEFAULT_CONTEXT_LENGTH,
-    DEFAULT_EXPORT_CONTEXT_LENGTHS,
-    DEFAULT_EXPORT_SEQUENCE_LENGTHS,
     LLM_QNN,
 )
 from qai_hub_models.models._shared.llm.perf_collection import (
     LLMPerfConfig,
     get_llm_perf_parametrization,
 )
-from qai_hub_models.models._shared.llm.test import CompileJobCache
 from qai_hub_models.models.qwen2_5_vl_7b_instruct import (
     MODEL_ID,
-    Model,
     VisionEncoder,
 )
-from qai_hub_models.models.qwen2_5_vl_7b_instruct.export import export_model
 from qai_hub_models.models.qwen2_5_vl_7b_instruct.model import (
     DEFAULT_IMAGE_HEIGHT,
     DEFAULT_IMAGE_WIDTH,
     HF_REPO_NAME,
-    MODEL_ASSET_VERSION,
-    NUM_LAYERS_PER_SPLIT,
-    NUM_SPLITS,
     Qwen2_5_VL_7B_PreSplit,
     Qwen2_5_VL_7B_QuantizablePreSplit,
 )
@@ -127,24 +119,13 @@ def _get_llm_perf_params() -> list[tuple[Precision, ScorecardDevice]]:
 def test_llm_perf(
     precision: Precision,
     device: ScorecardDevice,
-    compile_job_cache: CompileJobCache,
     llm_perf_config: LLMPerfConfig,
 ) -> None:
     tps, ttft, prefill_tps = test.run_llm_perf_test(
         model_id=MODEL_ID,
-        export_model_func=export_model,
         device=device,
         precision=precision,
-        compile_job_cache=compile_job_cache,
         output_dir=test.GENIE_BUNDLES_ROOT,
-        model_cls=Model,  # type: ignore[arg-type]
-        model_asset_version=MODEL_ASSET_VERSION,
-        num_splits=NUM_SPLITS,
-        export_context_lengths=llm_perf_config.export_context_lengths
-        or DEFAULT_EXPORT_CONTEXT_LENGTHS,
-        export_sequence_lengths=llm_perf_config.export_sequence_lengths
-        or DEFAULT_EXPORT_SEQUENCE_LENGTHS,
-        num_layers_per_split=NUM_LAYERS_PER_SPLIT,
         qairt_sdk_path=llm_perf_config.qairt_sdk_path,
         skip_perf_update=llm_perf_config.skip_perf_update,
     )

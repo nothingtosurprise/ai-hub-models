@@ -25,7 +25,6 @@ from qai_hub_models.models._shared.llm.perf_collection import (
     LLMPerfConfig,
     get_llm_perf_parametrization,
 )
-from qai_hub_models.models._shared.llm.test import CompileJobCache
 from qai_hub_models.models.falcon_v3_7b_instruct import (
     MODEL_ID,
     FP_Model,
@@ -301,34 +300,20 @@ def _get_llm_perf_params() -> list[tuple[Precision, ScorecardDevice]]:
 
 @pytest.mark.llm_perf
 @pytest.mark.skipif(
-    not torch.cuda.is_available()
-    or not importlib.util.find_spec("qualcomm_device_cloud_sdk"),
-    reason="This test requires GPU and the qualcomm_device_cloud_sdk package.",
+    not importlib.util.find_spec("qualcomm_device_cloud_sdk"),
+    reason="This test requires the qualcomm_device_cloud_sdk package.",
 )
 @pytest.mark.parametrize(("precision", "device"), _get_llm_perf_params())
 def test_llm_perf(
     precision: Precision,
     device: ScorecardDevice,
-    compile_job_cache: CompileJobCache,
     llm_perf_config: LLMPerfConfig,
 ) -> None:
     tps, ttft, prefill_tps = test.run_llm_perf_test(
         model_id=MODEL_ID,
-        export_model_func=export_model,
         device=device,
         precision=precision,
-        compile_job_cache=compile_job_cache,
         output_dir=test.GENIE_BUNDLES_ROOT,
-        model_cls=Model,
-        model_asset_version=MODEL_ASSET_VERSION,
-        num_splits=NUM_SPLITS,
-        export_context_lengths=llm_perf_config.export_context_lengths
-        or DEFAULT_EXPORT_CONTEXT_LENGTHS,
-        export_sequence_lengths=llm_perf_config.export_sequence_lengths
-        or DEFAULT_EXPORT_SEQUENCE_LENGTHS,
-        fp_model_cls=FP_Model,
-        position_processor_cls=PositionProcessor,
-        num_layers_per_split=NUM_LAYERS_PER_SPLIT,
         qairt_sdk_path=llm_perf_config.qairt_sdk_path,
         skip_perf_update=llm_perf_config.skip_perf_update,
     )

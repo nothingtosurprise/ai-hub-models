@@ -34,16 +34,12 @@ class LLMPerfConfig:
     Loads configuration from environment variables:
     - QAIHM_LLM_MODELS: Comma-separated model IDs or "all"
     - QAIHM_TEST_DEVICES: Comma-separated device names
-    - LLM_CONTEXT_LENGTH: Comma-separated context length(s) (default: 4096)
-    - LLM_SEQUENCE_LENGTH: Comma-separated sequence length(s) (default: 128,1)
     - SKIP_PERF_UPDATE: If set, skip updating perf.yaml files
     - QAIRT_SDK_PATH: Path to QAIRT SDK for auto devices
     """
 
     models: list[str] = field(default_factory=list)
     devices: list[str] = field(default_factory=list)
-    export_context_lengths: list[int] | None = None
-    export_sequence_lengths: list[int] | None = None
     skip_perf_update: bool = False
     qairt_sdk_path: str | None = None
 
@@ -56,18 +52,9 @@ class LLMPerfConfig:
         models = [m.strip() for m in models_str.split(",") if m.strip()]
         devices = [d.strip() for d in devices_str.split(",") if d.strip()]
 
-        raw_cl = os.environ.get("LLM_CONTEXT_LENGTH")
-        raw_sl = os.environ.get("LLM_SEQUENCE_LENGTH")
-
         return cls(
             models=models,
             devices=devices,
-            export_context_lengths=(
-                [int(x) for x in raw_cl.split(",")] if raw_cl else None
-            ),
-            export_sequence_lengths=(
-                [int(x) for x in raw_sl.split(",")] if raw_sl else None
-            ),
             skip_perf_update=bool(os.environ.get("SKIP_PERF_UPDATE")),
             qairt_sdk_path=os.environ.get("QAIRT_SDK_PATH"),
         )

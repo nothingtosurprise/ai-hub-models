@@ -698,9 +698,11 @@ class CollectLLMPerfTask(CompositeTask):
     Configuration is passed via environment variables:
     - QAIHM_LLM_MODELS: Comma-separated model IDs, or "all"
     - QAIHM_TEST_DEVICES: Comma-separated device names
-    - LLM_CONTEXT_LENGTH: Context length (default: 4096)
     - QAIRT_SDK_PATH: Path to QAIRT SDK zip
     - QDC_API_TOKEN: QDC API token
+
+    Pre-compiled genie bundles are fetched from each model's
+    release-assets.yaml.
     """
 
     def __init__(
@@ -745,35 +747,14 @@ class CollectLLMPerfTask(CompositeTask):
                 )
             )
 
-            # Install QDC wheel and optional GPU-specific requirements.
-            has_gpu_reqs = os.path.exists(
-                os.path.join(PY_PACKAGE_MODELS_ROOT, model_name, "requirements-gpu.txt")
-            )
-            gpu_req_rel_path = (
-                f"src/qai_hub_models/models/{model_name}/requirements-gpu.txt"
-            )
-            install_cmds = [f"pip install $(ls {qdc_wheel_glob})"]
-            if has_gpu_reqs:
-                # onnxruntime and onnxruntime-gpu share files in the onnxruntime/
-                # namespace, so uninstalling one deletes files the other still
-                # claims to own. On reused venvs this leaves onnxruntime-gpu
-                # half-broken (e.g. `GraphOptimizationLevel` missing). Clean
-                # both, install reqs, then uninstall the transitively re-pulled
-                # onnxruntime and force-reinstall onnxruntime-gpu to repair
-                # any shared files that got removed.
-                install_cmds.append("pip uninstall -y onnxruntime onnxruntime-gpu")
-                install_cmds.append(f"pip install -r {gpu_req_rel_path}")
-                # aimet_onnx transitively re-installs onnxruntime via onnxruntime-extensions
-                install_cmds.append("pip uninstall -y onnxruntime")
-                install_cmds.append(
-                    f"pip install --force-reinstall --no-deps "
-                    f"$(grep '^onnxruntime-gpu' {gpu_req_rel_path})"
-                )
+            # Install the QDC wheel so the perf test can submit QDC jobs. No GPU
+            # / AIMET requirements are needed: this task no longer compiles, it
+            # only fetches the pre-compiled genie bundle and runs it on device.
             tasks.append(
                 RunCommandsWithVenvTask(
-                    group_name=f"Install GPU Dependencies For Model {model_name}",
+                    group_name=f"Install QDC SDK For Model {model_name}",
                     venv=model_venv,
-                    commands=[" && ".join(install_cmds)],
+                    commands=[f"pip install $(ls {qdc_wheel_glob})"],
                     raise_on_failure=False,
                     ignore_return_codes=[5],
                 )

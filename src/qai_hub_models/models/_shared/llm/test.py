@@ -5,8 +5,8 @@
 from __future__ import annotations
 
 import os
+import shutil
 import sys
-import warnings
 from collections.abc import Callable
 from inspect import signature
 from pathlib import Path
@@ -18,20 +18,20 @@ import pytest
 import qai_hub as hub
 
 from qai_hub_models import Precision, QAIRTVersion, TargetRuntime
+from qai_hub_models.configs.model_metadata import ModelMetadata
+from qai_hub_models.configs.release_assets_yaml import QAIHMModelReleaseAssets
 from qai_hub_models.configs.tool_versions import ToolVersions
 from qai_hub_models.models._shared.llm.common import cleanup
 from qai_hub_models.models._shared.llm.model import (
-    DEFAULT_EXPORT_CONTEXT_LENGTHS,
-    DEFAULT_EXPORT_SEQUENCE_LENGTHS,
     LLM_AIMETOnnx,
     LLMBase,
-    LLMDynamicBase,
 )
 from qai_hub_models.models._shared.llm.perf_collection import update_perf_yaml
 from qai_hub_models.models._shared.llm.quantize import quantize
-from qai_hub_models.scorecard import ScorecardDevice
+from qai_hub_models.scorecard import ScorecardDevice, ScorecardProfilePath
 from qai_hub_models.scorecard.utils.testing import patch_qai_hub
 from qai_hub_models.utils.asset_loaders import ASSET_CONFIG
+from qai_hub_models.utils.fetch_prerelease_assets import fetch_prerelease_assets
 from qai_hub_models.utils.model_cache import CacheMode
 from qai_hub_models.utils.onnx.helpers import ONNXBundle
 
@@ -706,146 +706,82 @@ def setup_test_quantization(
 # ---------------------------------------------------------------------------
 
 
-class CompileJobCache:
-    """Session-scoped cache: keyed by (model_id, precision).
+def fetch_genie_bundle_for_perf(
+    model_id: str,
+    precision: Precision,
+    chipset: str,
+    output_dir: Path,
+) -> Path:
+    """Download and extract the pre-compiled genie bundle for this model.
 
-    Stores compile jobs from the first device so subsequent devices can
-    skip compilation (only re-link for the new device).
+    Looks up release-assets.yaml for (precision, chipset, GENIE), downloads
+    the zip from S3, and extracts it into output_dir. Returns the extracted
+    bundle directory.
+
+    Raises a clear error if no matching asset exists.
     """
+    assets = QAIHMModelReleaseAssets.from_model(model_id, not_exists_ok=True)
+    asset = assets.get_asset(precision, chipset, ScorecardProfilePath.GENIE)
+    if asset is None:
+        available_chipsets: list[str] = []
+        prec_details = assets.precisions.get(precision)
+        if prec_details is not None:
+            available_chipsets = sorted(prec_details.chipset_assets.keys())
+        raise RuntimeError(
+            f"No genie release asset found in release-assets.yaml for "
+            f"model_id={model_id!r}, precision={precision!s}, chipset={chipset!r}. "
+            f"Available chipsets for this precision: {available_chipsets or '<none>'}. "
+            "Build and update release-assets.yaml before running LLM perf collection."
+        )
 
-    def __init__(self) -> None:
-        self._cache: dict[tuple[str, Precision], list[hub.CompileJob]] = {}
+    bundle_dir = output_dir / ASSET_CONFIG.get_release_asset_name(
+        model_id, TargetRuntime.GENIE, precision, chipset
+    )
+    if bundle_dir.exists():
+        # Already fetched on a previous test in this session.
+        return bundle_dir
 
-    def get(self, model_id: str, precision: Precision) -> list[hub.CompileJob] | None:
-        return self._cache.get((model_id, precision))
-
-    def set(
-        self,
-        model_id: str,
-        precision: Precision,
-        compile_jobs: list[hub.CompileJob],
-    ) -> None:
-        self._cache[(model_id, precision)] = compile_jobs
+    zip_path = fetch_prerelease_assets(
+        model_id,
+        ScorecardProfilePath.GENIE,
+        precision=precision,
+        device_or_chipset=chipset,
+        output_folder=output_dir,
+        verbose=True,
+    )
+    shutil.unpack_archive(str(zip_path), extract_dir=str(output_dir))
+    if not bundle_dir.exists():
+        raise RuntimeError(
+            f"Extracted genie bundle missing expected directory {bundle_dir}; "
+            f"contents of {output_dir}: {sorted(p.name for p in output_dir.iterdir())}"
+        )
+    return bundle_dir
 
 
 def run_llm_perf_test(
     model_id: str,
-    export_model_func: Callable,
     device: ScorecardDevice,
     precision: Precision,
-    compile_job_cache: CompileJobCache,
     output_dir: Path | str,
-    model_cls: type[LLM_AIMETOnnx],
-    model_asset_version: int | str,
-    num_splits: int,
-    export_context_lengths: list[int] | None = None,
-    export_sequence_lengths: list[int] | None = None,
-    fp_model_cls: type[LLMBase] | None = None,
-    position_processor_cls: type | None = None,
-    num_layers_per_split: int | None = None,
     qairt_sdk_path: str | None = None,
     skip_perf_update: bool = False,
 ) -> tuple[float | None, float | None, float | None]:
-    """Compile via export_model, run QDC, and update perf.yaml for one
-    (model, precision, device).
+    """Fetch the pre-compiled genie bundle, run QDC, update perf.yaml.
 
-    Delegates all compilation, linking, downloading, and genie bundle
-    preparation to export_model_func so that both LLM and VLM models
-    are handled correctly.
-
-    For device 2..N, hub.submit_compile_job is patched to return cached
-    compile jobs from the first device, skipping compilation while still
-    running the export/link/download/genie bundle steps.
+    The genie bundle is downloaded from S3 using release-assets.yaml.
 
     Returns (tokens_per_second, time_to_first_token_ms, prefill_tokens_per_second).
     """
-    if export_context_lengths is None:
-        export_context_lengths = DEFAULT_EXPORT_CONTEXT_LENGTHS
-    if export_sequence_lengths is None:
-        export_sequence_lengths = DEFAULT_EXPORT_SEQUENCE_LENGTHS
-
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    export_kwargs: dict[str, Any] = dict(
-        checkpoint=f"DEFAULT_{str(precision).upper()}",
-        sequence_length=export_sequence_lengths,
-        context_length=export_context_lengths,
-        _skip_quantsim_creation=True,
-        model_cls=model_cls,
-        model_id=model_id,
-        model_asset_version=model_asset_version,
-        num_splits=num_splits,
-        output_dir=str(output_dir),
-    )
-    if num_layers_per_split is not None:
-        export_kwargs["num_layers_per_split"] = num_layers_per_split
-    if fp_model_cls is not None:
-        if issubclass(fp_model_cls, LLMDynamicBase):
-            # Dynamic-shape FP models don't take sequence/context length
-            # at construction time.
-            export_kwargs["fp_model"] = fp_model_cls.from_pretrained()
-        else:
-            export_kwargs["fp_model"] = fp_model_cls.from_pretrained(
-                sequence_length=max(export_sequence_lengths),
-                context_length=max(export_context_lengths),
-            )
-    if position_processor_cls is not None:
-        export_kwargs["position_processor_cls"] = position_processor_cls
-
-    common_export_flags = dict(
-        device=device.execution_device,
-        precision=precision,
-        skip_downloading=False,
-        skip_profiling=True,
-        skip_inferencing=True,
-        skip_summary=True,
-        target_runtime=TargetRuntime.GENIE,
+    genie_bundle_path = fetch_genie_bundle_for_perf(
+        model_id, precision, device.chipset, output_dir
     )
 
-    cached = compile_job_cache.get(model_id, precision)
-    if cached is not None:
-        # Fast path: return cached compile jobs in order instead of
-        # recompiling. export_model still runs model loading, link,
-        # download, and genie bundle preparation.
-        compile_job_iter = iter(cached)
-
-        def _return_cached(*args: Any, **kwargs: Any) -> hub.CompileJob:
-            job = next(compile_job_iter, None)
-            if job is None:
-                raise RuntimeError(
-                    f"Cached compile jobs exhausted for ({model_id!r}, {precision!r}). "
-                    "Not all compile jobs were captured on the first device."
-                )
-            return job
-
-        with patch("qai_hub.submit_compile_job", side_effect=_return_cached):
-            export_model_func(**common_export_flags, **export_kwargs)
-    else:
-        # First device: capture compile jobs for reuse on subsequent devices.
-        captured_compile_jobs: list[hub.CompileJob] = []
-        original_compile = hub.submit_compile_job
-
-        def _capture_compile(*args: Any, **kwargs: Any) -> hub.CompileJob:
-            job = original_compile(*args, **kwargs)
-            captured_compile_jobs.append(job)
-            return job
-
-        with patch("qai_hub.submit_compile_job", side_effect=_capture_compile):
-            export_model_func(**common_export_flags, **export_kwargs)
-
-        if captured_compile_jobs:
-            compile_job_cache.set(model_id, precision, captured_compile_jobs)
-        else:
-            warnings.warn(
-                f"No compile jobs captured for ({model_id!r}, {precision!r}); "
-                "cache will not be populated and each device will re-export.",
-                stacklevel=2,
-            )
-
-    genie_bundle_path = output_dir / ASSET_CONFIG.get_release_asset_name(
-        model_id, TargetRuntime.GENIE, precision, device.chipset
-    )
+    metadata = ModelMetadata.from_json(genie_bundle_path / "metadata.json")
+    assert metadata is not None and metadata.genie is not None
+    context_lengths = metadata.genie.context_lengths
 
     # QDC run
     from qai_hub_models.utils.qdc.genie_jobs import (
@@ -874,7 +810,7 @@ def run_llm_perf_test(
             model_id,
             device.reference_device_name,
             precision,
-            max(export_context_lengths),
+            max(context_lengths),
             tps,
             ttft,
             prefill_tps,
