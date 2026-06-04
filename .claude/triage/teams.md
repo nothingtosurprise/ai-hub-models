@@ -78,3 +78,21 @@ Use this to determine where to route nightly failure issues.
 8. **OOM / timeout / infrastructure** → `Cloud Services`
 9. **GPU nightly/weekly** → `gen-ai`
 10. **CLI issues** → `ai-hub-models`
+
+## External Destinations (Owner ≠ Tracker)
+
+Some issues are owned by a tetracode team but get tracked or fixed elsewhere.
+The agent should still route to the owning team for primary responsibility, but
+**soft-recommend the external destination** so the czar knows where the fix
+ultimately lands. Use phrasing like *"Likely tracked in: <link>"* — never auto-file.
+
+| Symptom | Owning Team | External Destination | Notes |
+|---------|-------------|----------------------|-------|
+| QAIRT compiler regression (numerics jump, perf gap correlated with QAIRT version bump) | `Compiler/ONNX2EP` | AISW JIRA (`https://jira-dc.qualcomm.com/jira/browse/AISW-*`) | Fix lives in QAIRT release. Example: issue #19256 spawned AISW-183859 for the QAIRT2.46 numerics drop. |
+| QDC endpoint flakiness, device pool exhaustion, "device unavailable" on retry | `Cloud services` | QDC JIRA (`https://jira-dc.qualcomm.com/jira/browse/QDC-*`) | Example: issue #19602 closed as dupe of QDC-5456. |
+| ONNX Runtime EP-only accuracy gaps, EP capture failures specific to upstream ORT-QNN | `Compiler/ONNX2EP` | `onnxruntime/onnxruntime-qnn` (upstream GitHub) | Example: issue #19345 ("Cannot capture entire model: Xor") fixed by upstream PR `onnxruntime/onnxruntime-qnn#402`. |
+
+**Phrasing for the soft recommendation:** in the agent's triage table, after the
+team name, optionally add a `Likely tracked in:` line. Do NOT include this line
+when the destination is uncertain — only when the symptom matches a documented
+pattern above.

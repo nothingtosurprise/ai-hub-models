@@ -76,6 +76,7 @@ When QAIRT version bumps coincide with regressions, all paths are likely affecte
 
 - **Any runtime regressed after QAIRT bump** → Very likely QAIRT version issue → `Compiler/ONNX2EP`
 - **All runtimes regressed simultaneously** → Could be model-level change → check `ai-hub-models` git history first
+- **QAIRT-bump-correlated regression** → Soft-recommend AISW JIRA as the external tracker (see teams.md "External Destinations"). The fix lives in a QAIRT release, not a tetracode PR.
 
 ## Nightly Failure → Runtime Triage
 

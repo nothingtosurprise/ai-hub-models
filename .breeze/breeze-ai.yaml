@@ -31,6 +31,17 @@ agents:
       IMPORTANT: NEVER remove existing error patterns or team entries from .claude/triage/ files — only add or modify.
       IMPORTANT: Flag low-confidence updates with "(low confidence — verify)".
 
+  # Scorecard Regression Analysis Agent
+  scorecard-analysis:
+    enabled: true
+    custom_instructions: |
+      You analyze scorecard performance and numerics regressions for QAI Hub Models.
+      Follow .claude/skills/scorecard-analyze/SKILL.md exactly.
+      Use .claude/triage/ knowledge base for pattern recognition and team routing.
+      Post findings as a structured comment on the regression issue in qcom-ai-hub/tetracode.
+      IMPORTANT: Soft recommendations only — never auto-assign or auto-label issues.
+      IMPORTANT: Analyze BOTH perf regressions (2x+ slowdown) AND numerics regressions (accuracy drift).
+
   # PR Review Agent
   pr-review:
     enabled: true

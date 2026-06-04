@@ -92,6 +92,28 @@ Bugs in our own codebase that caused nightly failures.
 
 **Detection heuristic:** If the stack trace is entirely in `qai_hub_models/`, the error appeared after a recent merge, and no external dependency changed, it's our bug.
 
+### Scorecard Submission Schema Drift
+
+Schema additions to `QAIHMModelCodeGen` (and similar pydantic configs read by the
+scorecard collector) silently break the "Submit Scorecard Jobs" / "Run Unit Tests
+(Pytorch Recipes)" steps when the producing branch and the consuming branch are
+out of sync. The failing job's `git diff` does NOT show the schema change because
+the change is in a sibling file that the failing job depends on transitively.
+
+| Signal | Implication |
+|--------|-------------|
+| `ValidationError: Extra inputs are not permitted [type=extra_forbidden]` | Pydantic config rejects a new field — schema producer/consumer skew |
+| `<model>_result_processing failed` in scorecard collect step | Often a schema mismatch, not a model issue |
+| Scorecard submission step fails on a single Python version while others pass | Non-deterministic ordering exposes the schema drift |
+
+**Occurrences:**
+- `2026-05-29` PR #3393 (`Set llms to run on the gpu runner`) added `skip_profile_and_inference` to `QAIHMModelCodeGen`. The 2026-05-30 scorecard run on a branch that predated #3393 broke at "Create Performance files for models" → "qwen2_5_vl_7b_instruct result processing failed" (issue #19498 retest fail).
+- `2026-05-31` issue #19577 — the agent flagged "Run Unit Tests (Pytorch Recipes)" as suspect but routed to PR #3393's GPU runner change rather than the schema addition. Czar fix (PR #3420) added a `pytest.skip` on `qwen2_5_vl_7b_instruct/conftest.py`, sidestepping the schema mismatch entirely.
+
+**Routing:** `ai-hub-models` (our config). Recommended action: rebase onto the
+branch that introduced the schema field, or add the field with a default to the
+producer side.
+
 ## External Contributor Bug
 
 Models merged by external contributors that break nightly.

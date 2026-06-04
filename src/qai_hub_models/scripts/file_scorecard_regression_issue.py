@@ -207,6 +207,16 @@ def main() -> None:
         help="AI Hub deployment subdomain for job URLs (default: workbench)",
     )
     parser.add_argument(
+        "--labels",
+        default="p1,scorecard",
+        help="Comma-separated labels for the filed issue (default: p1,scorecard)",
+    )
+    parser.add_argument(
+        "--title-prefix",
+        default="",
+        help="Optional prefix for the issue title (e.g. '[TEST] ')",
+    )
+    parser.add_argument(
         "--output",
         required=True,
         help="Path to write the issue JSON (title + body)",
@@ -251,7 +261,9 @@ def main() -> None:
         f"{numerics_count} numerics regression(s)."
     )
 
-    output = {"title": title, "body": body, "labels": ["p1", "scorecard"]}
+    title = f"{args.title_prefix}{title}"
+    labels = [l.strip() for l in args.labels.split(",")]
+    output = {"title": title, "body": body, "labels": labels}
     with open(args.output, "w") as f:
         json.dump(output, f, indent=2)
     print(f"Issue JSON written to {args.output}")

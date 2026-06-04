@@ -33,6 +33,37 @@ If the traceback points to our code, route to `ai-hub-models`.
 
 **Key principle:** If the stack trace is in `qai_hub_models/`, it's almost always `ai-hub-models` regardless of which runtime or compiler is mentioned in the error message.
 
+### Out-of-Band Cause (Cause Not in Visible Commit Range)
+
+Regressions sometimes originate outside what `git log` shows: an S3 test-asset swap,
+an external dataset change, a workbench-side schema change, or a third-party
+dependency drift. Bisecting the commit range narrows to plausible-but-wrong
+suspects in these cases.
+
+**Flag as candidate out-of-band cause when ALL of the following hold:**
+
+| Signal | What it means |
+|--------|---------------|
+| Same test fails identically across multiple Python versions | Not a Python-version-specific dep issue |
+| No commit in `last_passing..current` touches the failing test's path or its dependencies | The visible code-change set is unrelated |
+| Failure shape matches "expected vs actual output mismatch" rather than crash | Behavior changed, not API surface |
+
+**Triage advice in this case:** name the most likely commit suspect with confidence
+MEDIUM (not HIGH), and explicitly add a "could be out-of-band" note listing common
+out-of-band causes to check:
+
+- **S3 test-asset swap** — `qaihub-public-assets` bucket contents changed without a repo commit (e.g., test images regenerated). Check S3 object `Last-Modified` if accessible.
+- **External dataset change** — COCO/ImageNet/HF dataset host updated upstream.
+- **Workbench schema change** — fields added/removed on `QAIHMModelCodeGen`, `Hub.Device`, or other workbench-side configs that our code consumes. See historical-patterns.md `Scorecard Submission Schema Drift`.
+- **Third-party model library API drift** — ultralytics, transformers, torch nightly behavior change without our requirements pinning catching it.
+
+**Real example:** Issue #19498 (TrOCR cross-version regression). Agent confidently
+bisected to `common.py` serialize() refactor (PRs #3359/#3365). Actual cause was
+an out-of-band S3 test-image swap done by a contributor outside the repo. The
+multi-version-identical failure shape was the tell — a base-class refactor would
+typically interact with Python-version-specific behavior. Adding this rubric
+lowers confidence on bisected suspects when the out-of-band signals are present.
+
 ### ONNX EP Compiler Bugs
 | Error Signature | Label | Notes |
 |----------------|-------|-------|

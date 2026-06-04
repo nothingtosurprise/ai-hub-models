@@ -2,8 +2,8 @@
 ## Weekly Triage Knowledge Base Update
 ##
 ## Runs every Sunday at 9am UTC (2am PST).
-## A Breeze agent reviews resolved nightly issues from the past week,
-## evaluates triage accuracy, and opens a PR updating .claude/triage/ files.
+## A Breeze agent reviews resolved nightly and scorecard issues from the past week,
+## evaluates triage accuracy for both, and opens a PR updating .claude/triage/ files.
 ##
 
 name: Weekly KB Update
@@ -46,8 +46,9 @@ jobs:
           Bash(date:*),
           mcp__github_file_ops__commit_files
         prompt: |
-          Review resolved nightly issues from the past week, evaluate triage accuracy,
-          and propose updates to the triage knowledge base via a PR.
+          Review resolved nightly and scorecard issues from the past week, evaluate
+          triage accuracy for both, and propose updates to the triage knowledge base
+          via a PR.
 
           Read .claude/skills/kb-weekly-update/SKILL.md and follow its process exactly.
 
@@ -57,10 +58,11 @@ jobs:
           - LOOKBACK_DAYS: ${{ inputs.lookback_days || '7' }}
         system_prompt: |
           You are Breeze AI, a triage knowledge base maintainer for QAI Hub Models.
-          Your job: review how nightly failure triage performed this past week, identify
-          improvements, and open a PR with knowledge base updates for human review.
+          Your job: review how nightly failure triage AND scorecard regression triage
+          performed this past week, identify improvements, and open a PR with knowledge
+          base updates for human review.
 
-          IMPORTANT: You have a 40-turn limit. Be efficient:
+          IMPORTANT: You have a 50-turn limit. Be efficient:
           - Read SKILL.md first — it contains ALL instructions
           - Batch gh API calls — never loop over issues one-by-one
           - NEVER auto-merge — always create a PR for human review
@@ -74,7 +76,7 @@ jobs:
           - Full gh CLI access (authenticated) and complete repo checkout
           - Write access to create branches and PRs on ${{ github.repository }}
         bot_name: "breeze-code-action[bot]"
-        max_turns: 40
+        max_turns: 50
         track_progress: false
         show_full_output: true
         additional_permissions: "contents: write, pull-requests: write, actions: read"
@@ -93,4 +95,4 @@ jobs:
             token: ${{ secrets.SLACK_NOTIFIER_TOKEN }}
             payload: |
               channel: "C05LEEK0N8J"
-              text: "📚 Weekly Triage KB Update PR created — nightly czar please review.\n\nWorkflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+              text: "📚 Weekly Triage KB Update PR created — nightly + scorecard czars please review.\n\nWorkflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

@@ -50,6 +50,11 @@ on:
           type: string
           default: ''
 
+        test_mode:
+          description: "Test mode: files issue with P3+test labels and [TEST] prefix (leave unchecked for production runs)"
+          type: boolean
+          default: false
+
     # Used by other workflows to trigger this workflow
     workflow_call:
       inputs:
@@ -93,6 +98,10 @@ on:
           default: ''
           type: string
 
+        test_mode:
+          default: false
+          type: boolean
+
 env:
   PYTHONUNBUFFERED: 1
   VENV_PATH: build/ci-envs/qaihm-build
@@ -124,6 +133,8 @@ jobs:
       results_url: ${{ steps.upload-results.conclusion == 'success' && steps.upload-results.outputs.artifact-url || 'N/A' }}
       qaihm_test_deployment: ${{ steps.get_branch_and_date.outputs.qaihm_test_deployment }}
       csv_url: ${{ steps.upload-metrics.conclusion == 'success' && steps.upload-metrics.outputs.artifact-url || 'N/A' }}
+      regression_issue_url: ${{ steps.file-regression-issue.outputs.issue_url || '' }}
+      trend_summary: ${{ steps.extract-trend-summary.outputs.trend_summary || '' }}
 
     steps:
       - name: Check Options
@@ -419,6 +430,10 @@ jobs:
         run: |
           DEPLOYMENT=${{ env.QAIHM_TEST_DEPLOYMENT }}
           DEPLOYMENT_URL=$( [ "$DEPLOYMENT" = "prod" ] && echo "workbench" || echo "$DEPLOYMENT" )
+          TEST_ARGS=""
+          if [ "${{ inputs.test_mode }}" = "true" ]; then
+            TEST_ARGS="--labels P3,scorecard,test --title-prefix [TEST] "
+          fi
           source ${{ env.VENV_PATH }}/bin/activate && python3 -m qai_hub_models.scripts.file_scorecard_regression_issue \
             --perf-regressions-json "${{ env.QAIHM_TEST_ARTIFACTS_DIR }}/perf-regressions-2x-*.json" \
             --numerics-regressions-json "${{ env.QAIHM_TEST_ARTIFACTS_DIR }}/numerics-regressions-*.json" \
@@ -426,7 +441,8 @@ jobs:
             --perf-diff-url "${{ steps.upload-perf-diff-summary.outputs.artifact-url || 'N/A' }}" \
             --numerics-diff-url "${{ steps.upload-numerics-diff-summary.outputs.artifact-url || 'N/A' }}" \
             --deployment "$DEPLOYMENT_URL" \
-            --output "${{ env.QAIHM_TEST_ARTIFACTS_DIR }}/regression-issue.json"
+            --output "${{ env.QAIHM_TEST_ARTIFACTS_DIR }}/regression-issue.json" \
+            $TEST_ARGS
 
       - name: File Issue for 2x+ Regressions
         id: file-regression-issue
@@ -434,17 +450,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.STAGING_GH_TOKEN }}
         run: |
-          gh api repos/qcom-ai-hub/tetracode/issues \
+          RESPONSE=$(gh api repos/qcom-ai-hub/tetracode/issues \
             -X POST \
-            --input "${{ env.QAIHM_TEST_ARTIFACTS_DIR }}/regression-issue.json"
-
-      - name: Upload Job Artifact - Scorecard Results
-        if: ${{ always() }}
-        id: upload-results
-        uses: actions/upload-artifact@v7
-        with:
-          name: All Scorecard Artifacts (${{ inputs.action_id || inputs.latest_results_branch }})
-          path: ${{ env.QAIHM_TEST_ARTIFACTS_DIR }}
+            --input "${{ env.QAIHM_TEST_ARTIFACTS_DIR }}/regression-issue.json")
+          ISSUE_URL=$(echo "$RESPONSE" | jq -r '.html_url')
+          echo "issue_url=$ISSUE_URL" >> "$GITHUB_OUTPUT"
+          echo "Filed regression issue: $ISSUE_URL"
 
       - name: Upload Scorecard History to S3
         if: ${{ !cancelled() && steps.aggregate-results.outcome == 'success' }}
@@ -454,6 +465,34 @@ jobs:
             --run-id "${{ inputs.action_id || github.run_id }}" \
             --run-name "${{ inputs.tableau_branch_name || 'weekly-prod' }}" \
             --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Run Trend Detection
+        id: run-trend-detection
+        if: ${{ !cancelled() && steps.write-scorecard-regression-issue.outcome == 'success' }}
+        continue-on-error: true
+        run: |
+          source ${{ env.VENV_PATH }}/bin/activate && python3 -m qai_hub_models.scripts.detect_scorecard_trends \
+            --current-regressions ${{ env.QAIHM_TEST_ARTIFACTS_DIR }}/perf-regressions-2x-*.json \
+            --lookback 4 \
+            --output "${{ env.QAIHM_TEST_ARTIFACTS_DIR }}/trend-report.json"
+
+      - name: Extract Trend Summary
+        id: extract-trend-summary
+        if: ${{ !cancelled() }}
+        run: |
+          TREND_FILE="${{ env.QAIHM_TEST_ARTIFACTS_DIR }}/trend-report.json"
+          if [ -f "$TREND_FILE" ]; then
+            SUMMARY=$(source ${{ env.VENV_PATH }}/bin/activate && python3 -c "import json; r=json.load(open('$TREND_FILE')); print(json.dumps(r['summary']))")
+            echo "trend_summary=$SUMMARY" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload Job Artifact - Scorecard Results
+        if: ${{ always() }}
+        id: upload-results
+        uses: actions/upload-artifact@v7
+        with:
+          name: All Scorecard Artifacts (${{ inputs.action_id || inputs.latest_results_branch }})
+          path: ${{ env.QAIHM_TEST_ARTIFACTS_DIR }}
 
   create_pr:
     name: Create AI Hub Models PR for Perf Results
@@ -519,15 +558,17 @@ jobs:
     steps:
       - uses: slackapi/slack-github-action@v3
         name: Notify Scorecard (#scorecard)
+        if: ${{ !inputs.test_mode }}
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_NOTIFIER_TOKEN }}
           payload: |
             channel: "C04S7R56YTH"
-            text: "${{ needs.aggregate_scorecard_results.outputs.qaihm_test_deployment || '<unset deployment>' }} Scorecard Complete:\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}\nPerformance Diff: ${{ needs.aggregate_scorecard_results.outputs.performance_diff_url || 'N/A' }}\nNumerics Diff: ${{ needs.aggregate_scorecard_results.outputs.numerics_diff_url || 'N/A' }}\nCSV: ${{ needs.aggregate_scorecard_results.outputs.csv_url }}${{ inputs.publish_to_tableau && '\nTableau (may appear in up to 30 minutes): https://tableau.qualcomm.com/#/site/QCTEngineering/workbooks/18930/' || ''}}"
+            text: "${{ needs.aggregate_scorecard_results.outputs.qaihm_test_deployment || '<unset deployment>' }} Scorecard Complete:\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}\nPerformance Diff: ${{ needs.aggregate_scorecard_results.outputs.performance_diff_url || 'N/A' }}\nNumerics Diff: ${{ needs.aggregate_scorecard_results.outputs.numerics_diff_url || 'N/A' }}\nCSV: ${{ needs.aggregate_scorecard_results.outputs.csv_url }}${{ needs.aggregate_scorecard_results.outputs.regression_issue_url && format('\nRegression Issue: {0}', needs.aggregate_scorecard_results.outputs.regression_issue_url) || '' }}${{ inputs.publish_to_tableau && '\nTableau (may appear in up to 30 minutes): https://tableau.qualcomm.com/#/site/QCTEngineering/workbooks/18930/' || ''}}"
 
       - uses: slackapi/slack-github-action@v3
         name: Notify Scorecard (#ai-hub-models)
+        if: ${{ !inputs.test_mode }}
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_NOTIFIER_TOKEN }}
@@ -537,10 +578,84 @@ jobs:
 
       - uses: slackapi/slack-github-action@v3
         name: Notify Scorecard (#ai-hub-compiler)
-        if: ${{ needs.aggregate_scorecard_results.outputs.qaihm_test_deployment == 'dev' }}
+        if: ${{ !inputs.test_mode && needs.aggregate_scorecard_results.outputs.qaihm_test_deployment == 'dev' }}
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_NOTIFIER_TOKEN }}
           payload: |
             channel: "C08EYJJCW87"
             text: "${{ needs.aggregate_scorecard_results.outputs.qaihm_test_deployment || '<unset deployment>' }} Scorecard Complete. See #scorecard for details."
+
+      - uses: slackapi/slack-github-action@v3
+        name: Notify #tungsten-debug (test mode)
+        if: ${{ inputs.test_mode }}
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_NOTIFIER_TOKEN }}
+          payload: |
+            channel: "C09MKAM6AGP"
+            text: "[TEST] Scorecard Complete:\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}\nPerformance Diff: ${{ needs.aggregate_scorecard_results.outputs.performance_diff_url || 'N/A' }}\nNumerics Diff: ${{ needs.aggregate_scorecard_results.outputs.numerics_diff_url || 'N/A' }}\nRegression Issue: ${{ needs.aggregate_scorecard_results.outputs.regression_issue_url || 'N/A' }}"
+
+  scorecard-analysis:
+    name: AI Scorecard Regression Analysis
+    needs: [aggregate_scorecard_results]
+    if: ${{ !cancelled() && needs.aggregate_scorecard_results.outputs.regression_issue_url != '' }}
+    uses: qcom-eng-Nimbus/custom-templates/.github/workflows/breeze-agent-reusable.yaml@main
+    secrets: inherit
+    with:
+      agent_name: "scorecard-analysis"
+      claude_model: "us.anthropic.claude-opus-4-7"
+      github_token_scope: organization
+      base_allowed_tools: >-
+        Read,
+        Bash(gh:*),
+        Bash(cat:*),
+        Bash(git:*),
+        Bash(python3:*),
+        Bash(find:*),
+        Bash(ls:*),
+        Bash(head:*),
+        Bash(tail:*),
+        Bash(wc:*),
+        Bash(grep:*),
+        Bash(mkdir:*)
+      prompt: |
+        A scorecard has detected 2x+ performance and/or numerics regressions.
+        Analyze the regressions in depth and post a structured triage comment.
+
+        Read .claude/skills/scorecard-analyze/SKILL.md and follow its process exactly.
+
+        Context variables for the skill:
+        - ISSUE_URL: ${{ needs.aggregate_scorecard_results.outputs.regression_issue_url }}
+        - RUN_ID: ${{ github.run_id }}
+        - RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        - DEPLOYMENT: ${{ needs.aggregate_scorecard_results.outputs.qaihm_test_deployment }}
+        - ARTIFACT_NAME: All Scorecard Artifacts (${{ inputs.action_id || inputs.latest_results_branch }})
+        - TREND_SUMMARY: ${{ needs.aggregate_scorecard_results.outputs.trend_summary || 'unavailable' }}
+      system_prompt: |
+        You are Breeze AI, a scorecard regression analyst for QAI Hub Models.
+        Your job: analyze perf and numerics regressions, classify their severity and
+        trend (new/sustained/flaky), cluster by root cause, and soft-triage to teams.
+
+        IMPORTANT: You have a 40-turn limit. Be efficient:
+        - Read SKILL.md first — it contains ALL instructions
+        - Batch operations — never loop over regressions one-by-one
+        - Target: finish in under 30 turns
+
+        Environment:
+        - ISSUE_URL: ${{ needs.aggregate_scorecard_results.outputs.regression_issue_url }}
+        - RUN_ID: ${{ github.run_id }}
+        - RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        - DEPLOYMENT: ${{ needs.aggregate_scorecard_results.outputs.qaihm_test_deployment }}
+        - Full gh CLI access (authenticated) and complete repo checkout
+        - Regression issue filed in qcom-ai-hub/tetracode with labels p1, scorecard
+        - TREND_SUMMARY: ${{ needs.aggregate_scorecard_results.outputs.trend_summary || 'unavailable' }}
+          Format: {"lookback": N, "threshold": N, "total_current": N, "sustained_count": N, "new_count": N, "flaky_count": N, "recovered_count": N}
+          Use these counts to fill the Summary table's New/Sustained/Flaky columns.
+          If "unavailable", note trend data was not generated and classify all as unknown trend.
+        - Scorecard artifacts available via: gh run download $RUN_ID -n "$ARTIFACT_NAME" -D /tmp/scorecard-artifacts
+          Reads trend-report.json for per-regression NEW/SUSTAINED/FLAKY classification.
+      bot_name: "breeze-code-action[bot]"
+      max_turns: 40
+      track_progress: false
+      additional_permissions: "actions: read"
