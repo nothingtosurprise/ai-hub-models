@@ -86,9 +86,6 @@ PASSING_PRECISION_RUNTIMES: dict[Precision, list[TargetRuntime]] = {
         TargetRuntime.QNN_CONTEXT_BINARY,
         TargetRuntime.PRECOMPILED_QNN_ONNX,
     ],
-    Precision.mixed: [
-        TargetRuntime.PRECOMPILED_QNN_ONNX,
-    ],
 }
 
 

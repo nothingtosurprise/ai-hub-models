@@ -11,6 +11,8 @@ disabled_paths:
   w8a16_mixed_fp16:
     qnn_context_binary:
       scorecard_failure: 'Failing jobs: jp2j08eq5'
+    precompiled_qnn_onnx:
+      scorecard_failure: 'Failing jobs: j5qw9oq45'
 requires_aot_prepare: true
 global_requirements_incompatible: true
 pip_pre_build_reqs: nuscenes-devkit==1.2.0 --no-deps

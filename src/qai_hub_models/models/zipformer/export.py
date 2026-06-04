@@ -624,9 +624,6 @@ def main() -> None:
             TargetRuntime.QNN_CONTEXT_BINARY,
             TargetRuntime.PRECOMPILED_QNN_ONNX,
         ],
-        Precision.mixed: [
-            TargetRuntime.PRECOMPILED_QNN_ONNX,
-        ],
     }
 
     parser = export_parser(
