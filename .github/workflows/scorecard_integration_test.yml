@@ -30,7 +30,7 @@ jobs:
     uses: ./.github/workflows/scorecard.yml
     with:
       deployment: prod
-      models: yolov8_det,mask2former,mediapipe_face,amt_torchscript,efficientformer_onnx
+      models: yolov8_det,mask2former,mediapipe_face,cdcn_torchscript,efficientformer_onnx
       test_devices: default,cs_6490,cs_x_elite,cs_auto_makena_8295
       test_runtimes: default
       test_precisions: default

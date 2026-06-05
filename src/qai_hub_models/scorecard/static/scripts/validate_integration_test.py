@@ -4,6 +4,7 @@
 # ---------------------------------------------------------------------
 import argparse
 import functools
+import math
 import os
 import traceback
 from copy import deepcopy
@@ -13,6 +14,9 @@ from junitparser.junitparser import Error, Failure, JUnitXml, TestCase, TestSuit
 
 from qai_hub_models.scorecard.artifacts import ScorecardArtifact
 from qai_hub_models.scorecard.device import DEFAULT_SCORECARD_DEVICE
+
+DEFAULT_CHIPSET = DEFAULT_SCORECARD_DEVICE.chipset
+EFFICIENTFORMER_CHIPSET = "qualcomm-sa8295p"
 
 EXPECTED_MODEL_SETS = {
     "yolov8_det": {
@@ -28,17 +32,93 @@ EXPECTED_MODEL_SETS = {
         "float": ["onnx", "qnn", "tflite"],
         "w8a8": ["onnx", "qnn", "tflite"],
     },
-    "amt_torchscript": {"float": ["onnx", "qnn", "tflite"]},
+    "cdcn_torchscript": {"float": ["onnx", "qnn", "tflite"]},
     "efficientformer_onnx": {"float": ["qnn", "tflite"]},
 }
 SELECTED_DEVICES = {
-    ("mask2former", DEFAULT_SCORECARD_DEVICE.chipset),
-    ("mediapipe_face", DEFAULT_SCORECARD_DEVICE.chipset),
-    ("mediapipe_face::face_landmark_detector", DEFAULT_SCORECARD_DEVICE.chipset),
-    ("mediapipe_face::face_detector", DEFAULT_SCORECARD_DEVICE.chipset),
-    ("yolov8_det", DEFAULT_SCORECARD_DEVICE.chipset),
-    ("amt_torchscript", DEFAULT_SCORECARD_DEVICE.chipset),
-    ("efficientformer_onnx", "qualcomm-sa8295p"),
+    ("mask2former", DEFAULT_CHIPSET),
+    ("mediapipe_face", DEFAULT_CHIPSET),
+    ("mediapipe_face::face_landmark_detector", DEFAULT_CHIPSET),
+    ("mediapipe_face::face_detector", DEFAULT_CHIPSET),
+    ("yolov8_det", DEFAULT_CHIPSET),
+    ("cdcn_torchscript", DEFAULT_CHIPSET),
+    ("efficientformer_onnx", EFFICIENTFORMER_CHIPSET),
+}
+
+_FACE_SUBGRAPHS = (
+    "mediapipe_face::face_landmark_detector",
+    "mediapipe_face::face_detector",
+)
+
+_ALL_PASS = {"compile": "Passed", "profile": "Passed", "inference": "Passed"}
+
+_RELIABLE_RESULTS_COMBOS: list[tuple[str, str, str, str]] = [
+    ("mask2former", "float", "onnx", DEFAULT_CHIPSET),
+    ("mask2former", "float", "qnn", DEFAULT_CHIPSET),
+    ("mediapipe_face", "float", "onnx", DEFAULT_CHIPSET),
+    ("mediapipe_face", "float", "qnn", DEFAULT_CHIPSET),
+    ("mediapipe_face", "float", "tflite", DEFAULT_CHIPSET),
+    ("mediapipe_face", "w8a8", "onnx", DEFAULT_CHIPSET),
+    ("mediapipe_face", "w8a8", "qnn", DEFAULT_CHIPSET),
+    ("mediapipe_face", "w8a8", "tflite", DEFAULT_CHIPSET),
+    ("yolov8_det", "float", "onnx", DEFAULT_CHIPSET),
+    ("yolov8_det", "float", "qnn", DEFAULT_CHIPSET),
+    ("yolov8_det", "float", "tflite", DEFAULT_CHIPSET),
+    ("yolov8_det", "w8a8", "onnx", DEFAULT_CHIPSET),
+    ("yolov8_det", "w8a8", "qnn", DEFAULT_CHIPSET),
+    ("yolov8_det", "w8a8", "tflite", DEFAULT_CHIPSET),
+    ("yolov8_det", "w8a16", "onnx", DEFAULT_CHIPSET),
+    ("yolov8_det", "w8a16", "qnn", DEFAULT_CHIPSET),
+    ("yolov8_det", "w8a8_mixed_int16", "onnx", DEFAULT_CHIPSET),
+    ("yolov8_det", "w8a8_mixed_int16", "qnn", DEFAULT_CHIPSET),
+    ("cdcn_torchscript", "float", "onnx", DEFAULT_CHIPSET),
+    ("cdcn_torchscript", "float", "qnn", DEFAULT_CHIPSET),
+    ("cdcn_torchscript", "float", "tflite", DEFAULT_CHIPSET),
+]
+
+EXPECTED_RESULTS_STAGE_STATUS: dict[tuple[str, str, str, str], dict[str, str]] = {
+    combo: dict(_ALL_PASS) for combo in _RELIABLE_RESULTS_COMBOS
+}
+for sub in _FACE_SUBGRAPHS:
+    for precision in ("float", "w8a8"):
+        for runtime in ("onnx", "qnn", "tflite"):
+            EXPECTED_RESULTS_STAGE_STATUS[
+                (sub, precision, runtime, DEFAULT_CHIPSET)
+            ] = dict(_ALL_PASS)
+for runtime in ("onnx", "qnn", "tflite"):
+    EXPECTED_RESULTS_STAGE_STATUS[
+        ("efficientformer_onnx", "float", runtime, DEFAULT_CHIPSET)
+    ] = {"compile": "Passed", "inference": "Passed"}
+for runtime in ("qnn", "tflite"):
+    EXPECTED_RESULTS_STAGE_STATUS[
+        ("efficientformer_onnx", "float", runtime, EFFICIENTFORMER_CHIPSET)
+    ] = {"compile": "Passed", "profile": "Passed"}
+
+EXPECTED_ACCURACY_KEYS: set[tuple[str, str, str]] = {
+    ("efficientformer_onnx", "float", "onnx"),
+    ("efficientformer_onnx", "float", "qnn_dlc"),
+    ("efficientformer_onnx", "float", "tflite"),
+    ("mask2former", "float", "qnn_context_binary"),
+    ("mask2former", "float", "precompiled_qnn_onnx"),
+    ("mediapipe_face", "float", "onnx"),
+    ("mediapipe_face", "float", "qnn_dlc"),
+    ("mediapipe_face", "float", "tflite"),
+    ("mediapipe_face", "w8a8", "onnx"),
+    ("mediapipe_face", "w8a8", "qnn_dlc"),
+    ("mediapipe_face", "w8a8", "tflite"),
+    ("yolov8_det", "float", "onnx"),
+    ("yolov8_det", "float", "qnn_dlc"),
+    ("yolov8_det", "float", "tflite"),
+    ("yolov8_det", "w8a8", "onnx"),
+    ("yolov8_det", "w8a8", "qnn_dlc"),
+    ("yolov8_det", "w8a8", "tflite"),
+    ("yolov8_det", "w8a16", "onnx"),
+    ("yolov8_det", "w8a16", "qnn_dlc"),
+    ("yolov8_det", "w8a8_mixed_int16", "onnx"),
+    ("yolov8_det", "w8a8_mixed_int16", "qnn_dlc"),
+    ("cdcn_torchscript", "float", "onnx"),
+    ("cdcn_torchscript", "float", "qnn_dlc"),
+    ("cdcn_torchscript", "float", "tflite"),
 }
 
 
@@ -54,11 +134,47 @@ def num_configurations() -> int:
     )
 
 
+def _status_kind(status: str) -> str:
+    if not status or status == "skipped":
+        return "skipped"
+    if status.startswith("Passed"):
+        return "Passed"
+    if status.startswith("Failed"):
+        return "Failed"
+    return status
+
+
+def _check_expected_stage_statuses(results_df: pd.DataFrame) -> list[str]:
+    errors: list[str] = []
+    by_key = {
+        (row.model_id, row.precision, row.runtime, row.chipset): row
+        for _, row in results_df.iterrows()
+    }
+    for key, expected in EXPECTED_RESULTS_STAGE_STATUS.items():
+        row = by_key.get(key)
+        if row is None:
+            errors.append(
+                f"Missing expected results row for {key} (cannot check stage statuses)."
+            )
+            continue
+        for stage, expected_status in expected.items():
+            actual = _status_kind(getattr(row, f"{stage}_status", ""))
+            if actual != expected_status:
+                full = getattr(row, f"{stage}_status", "")
+                errors.append(
+                    f"Stage regression: {key} expected {stage}={expected_status} "
+                    f"but got {actual!r} (full status: {full!r})."
+                )
+    return errors
+
+
 def validate_results_df(results_df: pd.DataFrame) -> list[str]:
     """
     Checks the aggregated results csv and verifies that it has the expected outputs.
     Returns a list of error strings, if any.
     """
+    errors = _check_expected_stage_statuses(results_df)
+
     results_df = results_df[
         results_df[["model_id", "chipset"]].apply(tuple, axis=1).isin(SELECTED_DEVICES)
     ]
@@ -70,8 +186,6 @@ def validate_results_df(results_df: pd.DataFrame) -> list[str]:
         unfound_model_sets["mediapipe_face"]
     )
 
-    errors = []
-    # Dummy row added for tflite in aggregated results for tableau
     unfound_model_sets["yolov8_det"]["w8a16"].append("tflite")
     unfound_model_sets["yolov8_det"]["w8a8_mixed_int16"].append("tflite")
     unfound_model_sets["mask2former"]["float"].append("tflite")
@@ -138,12 +252,31 @@ def validate_accuracy_df(accuracy_df: pd.DataFrame) -> list[str]:
     Checks the accuracy results csv and verifies that it has the expected outputs.
     Returns a list of error strings, if any.
     """
+    errors: list[str] = []
     expected_models = set(EXPECTED_MODEL_SETS.keys())
-    if (accuracy_models := set(accuracy_df.model_id.unique())) != expected_models:
-        return [
+    accuracy_models = set(accuracy_df.model_id.unique())
+    if accuracy_models != expected_models:
+        errors.append(
             f"Mismatch between accuracy csv models ({accuracy_models}) and expected models ({expected_models})."
-        ]
-    return []
+        )
+
+    by_key: dict[tuple[str, str, str], float | None] = {}
+    for _, row in accuracy_df.iterrows():
+        key = (row.model_id, row.precision, row.runtime)
+        psnr0 = row.get("PSNR_0")
+        try:
+            by_key[key] = float(psnr0) if psnr0 not in (None, "") else None
+        except (TypeError, ValueError):
+            by_key[key] = None
+
+    for key in EXPECTED_ACCURACY_KEYS:
+        if key not in by_key:
+            errors.append(f"Missing expected accuracy row for {key}.")
+            continue
+        actual = by_key[key]
+        if actual is None or math.isnan(actual):
+            errors.append(f"Accuracy row {key} has no valid PSNR_0 value.")
+    return errors
 
 
 def main() -> None:

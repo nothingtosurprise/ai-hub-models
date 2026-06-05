@@ -114,7 +114,7 @@ def test_count_device_jobs_filtering() -> None:
 
 def test_count_device_jobs_static_models() -> None:
     with set_temp_env(get_test_env()):
-        total_jobs, *_ = count_device_jobs({"amt_torchscript"})
+        total_jobs, *_ = count_device_jobs({"cdcn_torchscript"})
     assert total_jobs > 0
 
 
