@@ -70,14 +70,16 @@ sys.meta_path.insert(0, _finder)
 # transitively import from mocked packages (transformers, timm, etc.)
 from qai_hub_models.datasets.imagenet import ImagenetDataset  # noqa: E402
 from qai_hub_models.models._shared.llm.export import get_llm_parser  # noqa: E402
-from qai_hub_models.models.baichuan2_7b import Model as BaichuanModel  # noqa: E402
-from qai_hub_models.models.baichuan2_7b.export import (  # noqa: E402
-    export_model as baichuan_export,
-)
 from qai_hub_models.models.llama_v3_1_8b_instruct import (  # noqa: E402
     Model as LlamaModel,
 )
 from qai_hub_models.models.midas import Model as MidasModel  # noqa: E402
+from qai_hub_models.models.qwen2_7b_instruct import (  # noqa: E402
+    Model as Qwen2_7BModel,
+)
+from qai_hub_models.models.qwen2_7b_instruct.export import (  # noqa: E402
+    export_model as qwen2_7b_export,
+)
 from qai_hub_models.models.resnet18 import MODEL_ID as RESNET_MODEL_ID  # noqa: E402
 from qai_hub_models.models.resnet18 import Model as ResnetModel  # noqa: E402
 from qai_hub_models.models.resnet18.export import (  # noqa: E402
@@ -307,7 +309,7 @@ def test_parse_whisper_export() -> None:
     assert set(vars(args).keys()) == gt_set
 
 
-def test_parse_baichuan_export() -> None:
+def test_parse_qwen2_7b_export() -> None:
     supported_precision_runtimes: dict[Precision, list[TargetRuntime]] = {
         Precision.w4a16: [
             TargetRuntime.QNN_CONTEXT_BINARY,
@@ -315,8 +317,8 @@ def test_parse_baichuan_export() -> None:
     }
 
     parser = export_parser(
-        model_cls=BaichuanModel,
-        export_fn=baichuan_export,
+        model_cls=Qwen2_7BModel,
+        export_fn=qwen2_7b_export,
         supported_precision_runtimes=supported_precision_runtimes,
     )
     args = parser.parse_args([])
@@ -531,8 +533,8 @@ def test_default_runtime_no_precision_arg() -> None:
     runtime should be the first runtime of the first precision.
     """
     parser = export_parser(
-        model_cls=BaichuanModel,
-        export_fn=baichuan_export,
+        model_cls=Qwen2_7BModel,
+        export_fn=qwen2_7b_export,
         supported_precision_runtimes={
             Precision.w4a16: [
                 TargetRuntime.QNN_CONTEXT_BINARY,

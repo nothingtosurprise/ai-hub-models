@@ -13,7 +13,6 @@ applicable_scenarios:
 - Content Generation
 - Customer Support
 related_models:
-- qwen2_5_7b_instruct
 - qwen3_4b
 - qwen3_4b_instruct_2507
 form_factors:

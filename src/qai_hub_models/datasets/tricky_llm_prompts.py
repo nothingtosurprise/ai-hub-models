@@ -118,13 +118,13 @@ class TrickyLLMPromptsPhi35(BaseTrickyLLMPrompts):
     MODEL_NAME = "phi35"
 
     def raw_prompts(self) -> list[str]:
-        from qai_hub_models.models.phi_3_5_mini_instruct_recipe import Model
+        from qai_hub_models.models._shared.phi.model import Phi35Base
 
         tokenizer = AutoTokenizer.from_pretrained("microsoft/Phi-3.5-mini-instruct")
 
         return [
             (
-                Model.get_input_prompt_with_tags(
+                Phi35Base.get_input_prompt_with_tags(
                     user_input_prompt="What is Gravity?",
                     system_context_prompt="You are a helpful AI assistant.",
                     tokenizer=tokenizer,
@@ -132,7 +132,7 @@ class TrickyLLMPromptsPhi35(BaseTrickyLLMPrompts):
                 + "Gravity is a fundamental force of nature that attracts two bodies with mass towards each other. It is described by Isaac Newton'"
             ),
             (
-                Model.get_input_prompt_with_tags(
+                Phi35Base.get_input_prompt_with_tags(
                     user_input_prompt="What is Gravity?",
                     system_context_prompt="You are a helpful AI assistant.",
                     tokenizer=tokenizer,

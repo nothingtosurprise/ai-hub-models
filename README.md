@@ -361,7 +361,6 @@ and many more.
 | [Stable-Diffusion-v2.1](https://aihub.qualcomm.com/models/stable_diffusion_v2_1) | [qai_hub_models.models.stable_diffusion_v2_1](src/qai_hub_models/models/stable_diffusion_v2_1/README.md) |
 | | |
 | **Text Generation**
-| [Baichuan2-7B](https://aihub.qualcomm.com/models/baichuan2_7b) | [qai_hub_models.models.baichuan2_7b](src/qai_hub_models/models/baichuan2_7b/README.md) |
 | [Distil-Bert-Base-Uncased-Hf](https://aihub.qualcomm.com/models/distil_bert_base_uncased_hf) | [qai_hub_models.models.distil_bert_base_uncased_hf](src/qai_hub_models/models/distil_bert_base_uncased_hf/README.md) |
 | [Electra-Bert-Base-Discrim-Google](https://aihub.qualcomm.com/models/electra_bert_base_discrim_google) | [qai_hub_models.models.electra_bert_base_discrim_google](src/qai_hub_models/models/electra_bert_base_discrim_google/README.md) |
 | [Falcon3-7B-Instruct](https://aihub.qualcomm.com/models/falcon_v3_7b_instruct) | [qai_hub_models.models.falcon_v3_7b_instruct](src/qai_hub_models/models/falcon_v3_7b_instruct/README.md) |
@@ -369,7 +368,6 @@ and many more.
 | [IndusQ-1.1B](https://aihub.qualcomm.com/models/indus_1b) | [qai_hub_models.models.indus_1b](src/qai_hub_models/models/indus_1b/README.md) |
 | [JAIS-6p7b-Chat](https://aihub.qualcomm.com/models/jais_6p7b_chat) | [qai_hub_models.models.jais_6p7b_chat](src/qai_hub_models/models/jais_6p7b_chat/README.md) |
 | [Llama-SEA-LION-v3.5-8B-R](https://aihub.qualcomm.com/models/llama_v3_1_sea_lion_3_5_8b_r) | [qai_hub_models.models.llama_v3_1_sea_lion_3_5_8b_r](src/qai_hub_models/models/llama_v3_1_sea_lion_3_5_8b_r/README.md) |
-| [Llama-v2-7B-Chat](https://aihub.qualcomm.com/models/llama_v2_7b_chat) | [qai_hub_models.models.llama_v2_7b_chat](src/qai_hub_models/models/llama_v2_7b_chat/README.md) |
 | [Llama-v3-8B-Instruct](https://aihub.qualcomm.com/models/llama_v3_8b_instruct) | [qai_hub_models.models.llama_v3_8b_instruct](src/qai_hub_models/models/llama_v3_8b_instruct/README.md) |
 | [Llama-v3-ELYZA-JP-8B](https://aihub.qualcomm.com/models/llama_v3_elyza_jp_8b) | [qai_hub_models.models.llama_v3_elyza_jp_8b](src/qai_hub_models/models/llama_v3_elyza_jp_8b/README.md) |
 | [Llama-v3.1-8B-Instruct](https://aihub.qualcomm.com/models/llama_v3_1_8b_instruct) | [qai_hub_models.models.llama_v3_1_8b_instruct](src/qai_hub_models/models/llama_v3_1_8b_instruct/README.md) |
@@ -382,7 +380,6 @@ and many more.
 | [PLaMo-1B](https://aihub.qualcomm.com/models/plamo_1b) | [qai_hub_models.models.plamo_1b](src/qai_hub_models/models/plamo_1b/README.md) |
 | [Phi-3.5-Mini-Instruct](https://aihub.qualcomm.com/models/phi_3_5_mini_instruct) | [qai_hub_models.models.phi_3_5_mini_instruct](src/qai_hub_models/models/phi_3_5_mini_instruct/README.md) |
 | [Qwen2-7B-Instruct](https://aihub.qualcomm.com/models/qwen2_7b_instruct) | [qai_hub_models.models.qwen2_7b_instruct](src/qai_hub_models/models/qwen2_7b_instruct/README.md) |
-| [Qwen2.5-7B-Instruct](https://aihub.qualcomm.com/models/qwen2_5_7b_instruct) | [qai_hub_models.models.qwen2_5_7b_instruct](src/qai_hub_models/models/qwen2_5_7b_instruct/README.md) |
 | [Qwen2.5-VL-7B-Instruct](https://aihub.qualcomm.com/models/qwen2_5_vl_7b_instruct) | [qai_hub_models.models.qwen2_5_vl_7b_instruct](src/qai_hub_models/models/qwen2_5_vl_7b_instruct/README.md) |
 | [Qwen3-4B](https://aihub.qualcomm.com/models/qwen3_4b) | [qai_hub_models.models.qwen3_4b](src/qai_hub_models/models/qwen3_4b/README.md) |
 | [Qwen3-4B-Instruct-2507](https://aihub.qualcomm.com/models/qwen3_4b_instruct_2507) | [qai_hub_models.models.qwen3_4b_instruct_2507](src/qai_hub_models/models/qwen3_4b_instruct_2507/README.md) |
