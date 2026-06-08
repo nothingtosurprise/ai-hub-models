@@ -17,6 +17,8 @@ import os
 import onnx
 {%- if is_collection_model %}
 from collections.abc import Mapping
+{% else %}
+from qai_hub_models.utils.kwarg_helpers import filter_kwargs
 {% endif %}
 from qai_hub_models.utils.input_spec import InputSpec, to_hub_input_specs
 {%- if is_collection_model %}
@@ -49,7 +51,7 @@ from qai_hub_models.utils.checkpoint import CheckpointType
 from qai_hub_models.utils.args import (
     export_parser,
     get_export_model_name,
-    {{ "get_component_input_spec_kwargs" if is_collection_model else "get_input_spec_kwargs" }},
+    {{ "get_component_input_spec_kwargs," if is_collection_model else "" }}
     {%- if not is_precompiled %}
     get_model_kwargs,
     {%- endif %}
@@ -875,7 +877,7 @@ def export_model(
 
     {%- if not is_collection_model %}
     input_spec = model.get_input_spec(
-        **get_input_spec_kwargs(model, additional_model_kwargs)
+        **filter_kwargs(model.get_input_spec, additional_model_kwargs)
     )
     {%- else %}
     {%- if has_multi_graph %}

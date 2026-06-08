@@ -39,7 +39,6 @@ from qai_hub_models.utils.base_model import (
 )
 from qai_hub_models.utils.base_multi_graph_model import (
     MultiGraphCollectionModel,
-    MultiGraphWorkbenchModel,
 )
 from qai_hub_models.utils.envvars import DevModeEnvvar
 from qai_hub_models.utils.evaluate import EvalMode
@@ -847,7 +846,7 @@ def demo_model_from_cli_args(
             cli_dict = vars(cli_args)
             additional_kwargs = dict(
                 get_model_kwargs(model_cls, args_dict=cli_dict),
-                **get_input_spec_kwargs(model_cls, cli_dict),
+                **filter_kwargs(model_cls.get_input_spec, cli_dict),
             )
             target_model = compile_model_from_args(
                 model_id,
@@ -986,19 +985,6 @@ def get_collection_model_input_spec_parser(
     return parser
 
 
-def get_input_spec_kwargs(
-    model: type[WorkbenchModel | MultiGraphWorkbenchModel]
-    | WorkbenchModel
-    | MultiGraphWorkbenchModel,
-    args_dict: Mapping[str, Any],
-) -> dict[str, Any]:
-    """
-    Given a dict with many args, pull out the ones relevant
-    to constructing the model's input_spec.
-    """
-    return filter_kwargs(model.get_input_spec, args_dict)
-
-
 def get_component_input_spec_kwargs(
     model_cls: type[PretrainedCollectionModel | MultiGraphCollectionModel],
     component_name: str,
@@ -1014,7 +1000,7 @@ def get_component_input_spec_kwargs(
     """
     comp_cls = model_cls.component_classes[component_name]
     cli_prefix = getattr(comp_cls, "cli_args_prefix", component_name)
-    kwargs: dict[str, Any] = get_input_spec_kwargs(comp_cls, args_dict)
+    kwargs: dict[str, Any] = filter_kwargs(comp_cls.get_input_spec, args_dict)
     return {
         f"{cli_prefix}_{param_name}" if cli_prefix else param_name: kwarg
         for param_name, kwarg in kwargs.items()
@@ -1033,7 +1019,7 @@ def input_spec_from_cli_args(
         assert "on_device" in cli_args and cli_args.on_device
         assert isinstance(model.model.producer, hub.CompileJob)
         return model.model.producer.shapes
-    return model.get_input_spec(**get_input_spec_kwargs(model, vars(cli_args)))
+    return model.get_input_spec(**filter_kwargs(model.get_input_spec, vars(cli_args)))
 
 
 def _evaluate_export_common_parser(

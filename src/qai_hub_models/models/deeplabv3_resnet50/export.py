@@ -31,7 +31,6 @@ from qai_hub_models.utils import quantization as quantization_utils
 from qai_hub_models.utils.args import (
     export_parser,
     get_export_model_name,
-    get_input_spec_kwargs,
     get_model_kwargs,
 )
 from qai_hub_models.utils.asset_loaders import (
@@ -43,6 +42,7 @@ from qai_hub_models.utils.compare import torch_inference
 from qai_hub_models.utils.export_result import ExportResult
 from qai_hub_models.utils.export_without_hub_access import export_without_hub_access
 from qai_hub_models.utils.input_spec import InputSpec, to_hub_input_specs
+from qai_hub_models.utils.kwarg_helpers import filter_kwargs
 from qai_hub_models.utils.onnx.helpers import download_and_unzip_workbench_onnx_model
 from qai_hub_models.utils.path_helpers import get_next_free_path
 from qai_hub_models.utils.printing import (
@@ -356,7 +356,7 @@ def export_model(
         **get_model_kwargs(Model, dict(**additional_model_kwargs, precision=precision))
     )
     input_spec = model.get_input_spec(
-        **get_input_spec_kwargs(model, additional_model_kwargs)
+        **filter_kwargs(model.get_input_spec, additional_model_kwargs)
     )
     source_model_to_compile = upload_model(model, input_spec)
 

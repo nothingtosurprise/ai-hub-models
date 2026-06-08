@@ -63,8 +63,8 @@ from qai_hub_models.models._shared.llm.model import (
 )
 from qai_hub_models.utils.args import (
     export_parser,
-    get_input_spec_kwargs,
 )
+from qai_hub_models.utils.kwarg_helpers import filter_kwargs
 
 VALID_TARGET_RUNTIMES = Literal[TargetRuntime.GENIE]
 
@@ -363,7 +363,7 @@ def export_model(
         """Export ONNX, split, upload parts. Returns (uploaded_models, split_input_names)."""
         inst_input_spec = inst_model.get_input_spec(
             **{
-                **get_input_spec_kwargs(inst_model, additional_model_kwargs),
+                **filter_kwargs(inst_model.get_input_spec, additional_model_kwargs),
                 "sequence_length": inst_seq_len,
                 "context_length": inst_ctx_len,
                 "llm_config": llm_config.to_dict(),
@@ -457,7 +457,7 @@ def export_model(
 
         input_spec = model.get_input_spec(
             **{
-                **get_input_spec_kwargs(model, additional_model_kwargs),
+                **filter_kwargs(model.get_input_spec, additional_model_kwargs),
                 "sequence_length": seq_len,
                 "context_length": ctx_len,
                 "llm_config": llm_config.to_dict(),

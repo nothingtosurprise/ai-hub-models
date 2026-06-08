@@ -14,15 +14,12 @@ import qai_hub as hub
 from qai_hub_models.common import Precision, TargetRuntime
 from qai_hub_models.models.bert_base_uncased_hf import MODEL_ID, Model
 from qai_hub_models.models.bert_base_uncased_hf.export import export_model
-from qai_hub_models.utils.args import (
-    evaluate_parser,
-    get_input_spec_kwargs,
-    get_model_kwargs,
-)
+from qai_hub_models.utils.args import evaluate_parser, get_model_kwargs
 from qai_hub_models.utils.asset_loaders import UNPUBLISHED_MODEL_WARNING, query_yes_no
 from qai_hub_models.utils.evaluate import evaluate_on_dataset
 from qai_hub_models.utils.inference import compile_model_from_args
 from qai_hub_models.utils.input_spec import InputSpec
+from qai_hub_models.utils.kwarg_helpers import filter_kwargs
 
 
 def main() -> None:
@@ -56,7 +53,7 @@ def main() -> None:
     args = parser.parse_args()
 
     model_kwargs = get_model_kwargs(Model, vars(args))
-    input_spec_kwargs = get_input_spec_kwargs(Model, vars(args))
+    input_spec_kwargs = filter_kwargs(Model.get_input_spec, vars(args))
 
     if len(eval_dataset_classes) == 0:
         print(

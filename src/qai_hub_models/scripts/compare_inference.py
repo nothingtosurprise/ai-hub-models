@@ -28,12 +28,12 @@ from qai_hub_models.utils.args import (
     _add_device_args,
     add_precision_arg,
     add_target_runtime_arg,
-    get_input_spec_kwargs,
     get_model_kwargs,
     get_parser,
 )
 from qai_hub_models.utils.base_model import BaseModel, CollectionModel
 from qai_hub_models.utils.compare import METRICS_FUNCTIONS, torch_inference
+from qai_hub_models.utils.kwarg_helpers import filter_kwargs
 from qai_hub_models.utils.path_helpers import MODEL_IDS
 from qai_hub_models.utils.printing import print_inference_metrics
 from qai_hub_models.utils.transpose_channel import transpose_channel_last_to_first
@@ -173,7 +173,7 @@ def compare_inference(
 
     # Run local inference
     input_spec = model.get_input_spec(
-        **get_input_spec_kwargs(model, additional_model_kwargs)
+        **filter_kwargs(model.get_input_spec, additional_model_kwargs)
     )
     sample_inputs = model.sample_inputs(input_spec, use_channel_last_format=False)
 

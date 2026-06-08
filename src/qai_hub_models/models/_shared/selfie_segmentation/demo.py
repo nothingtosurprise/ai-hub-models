@@ -8,13 +8,13 @@ from qai_hub_models.models._shared.selfie_segmentation.app import SelfieSegmenta
 from qai_hub_models.models._shared.selfie_segmentation.model import SelfieSegmentor
 from qai_hub_models.utils.args import (
     demo_model_from_cli_args,
-    get_input_spec_kwargs,
     get_model_cli_parser,
     get_on_device_demo_parser,
     validate_on_device_demo_args,
 )
 from qai_hub_models.utils.asset_loaders import load_image
 from qai_hub_models.utils.display import display_or_save_image
+from qai_hub_models.utils.kwarg_helpers import filter_kwargs
 
 
 def selfie_segmentation_demo(
@@ -40,7 +40,7 @@ def selfie_segmentation_demo(
     image = load_image(args.image)
     input_image = image.convert("RGB")
     input_spec = (
-        model.get_input_spec(**get_input_spec_kwargs(model, args_dict=args.__dict__))
+        model.get_input_spec(**filter_kwargs(model.get_input_spec, args.__dict__))
         if isinstance(model, SelfieSegmentor)
         else model.get_input_spec()
     )
