@@ -18,5 +18,7 @@ enabled_profile_runtimes:
 - onnx
 hub_model_ids_automated:
   prod: mm63r3p6m
+  dev: mn1jl0y4n
 hub_input_dataset_ids_automated:
   prod: d9pgg00n9
+  dev: dp7lnpy49

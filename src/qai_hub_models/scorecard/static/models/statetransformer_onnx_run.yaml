@@ -18,5 +18,7 @@ enabled_profile_runtimes:
 - qnn_dlc
 hub_model_ids_automated:
   prod: mmdvp14om
+  dev: mnwkvxzpn
 hub_input_dataset_ids_automated:
   prod: dv91ll1x2
+  dev: d67omy862

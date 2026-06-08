@@ -25,7 +25,10 @@ channel_first_outputs:
 - argmax
 hub_model_ids_automated:
   prod: mm6rgzxdm
+  dev: mmd10xr0m
 hub_input_dataset_ids_automated:
   prod: d9edqk3v2
+  dev: dw26d13z9
 hub_input_channel_last_dataset_ids_automated:
   prod: d7z0kqry2
+  dev: d693wy8y2
