@@ -76,6 +76,15 @@ devices:
     form_factor: IoT
     vendor: qualcomm
     icon: IoT_Chip
+  XR2 Gen 2:
+    chipset: qualcomm-qcs8450
+    reference_chipset: qualcomm-snapdragon-8gen1
+    os:
+      ostype: Android
+      version: '13'
+    form_factor: XR
+    vendor: qualcomm
+    icon: XR_Headset
 chipsets:
   qualcomm-qcs8275:
     aliases:
@@ -147,3 +156,12 @@ chipsets:
     soc_model: 60
     reference_device: Dragonwing IQ-X7181
     supports_weight_sharing: true
+  qualcomm-qcs8450:
+    aliases:
+    - qualcomm-qcs8450
+    marketing_name: Qualcomm® QCS8450
+    world: XR
+    supports_fp16: true
+    htp_version: 69
+    soc_model: 36
+    reference_device: XR2 Gen 2

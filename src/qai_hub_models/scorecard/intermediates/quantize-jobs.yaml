@@ -124,7 +124,7 @@ real_esrgan_x4plus_w8a8: jgkd72j2p
 regnet_w8a8: jp38vzyl5
 regnet_y_800mf_w8a8: j5wx2lo6p
 resnet101_w8a8: jpxmnlv1g
-resnet18_w8a8: jpr98lk9p
+resnet18_w8a8: j5766jzng
 resnet50_w8a8: jpv40l3jp
 resnet_2plus1d_w8a8: j56veo46p
 resnet_3d_w8a8: jg98jolwp

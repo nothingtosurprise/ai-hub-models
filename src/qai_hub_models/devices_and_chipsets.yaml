@@ -171,6 +171,7 @@ devices:
     form_factor: Phone
     vendor: samsung
     icon: Phone_S22
+    enabled_in_scorecard: true
   Samsung Galaxy S22+ 5G:
     chipset: qualcomm-snapdragon-8gen1
     os:
@@ -211,7 +212,6 @@ devices:
     form_factor: XR
     vendor: qualcomm
     icon: XR_Headset
-    enabled_in_scorecard: true
   XR2 Gen 2 (Proxy):
     chipset: qualcomm-qcs8450-proxy
     os:
@@ -484,6 +484,16 @@ devices:
     vendor: qualcomm
     icon: IoT_Chip
     available_in_workbench: false
+  XR2 Gen 2:
+    chipset: qualcomm-qcs8450
+    reference_chipset: qualcomm-snapdragon-8gen1
+    os:
+      ostype: Android
+      version: '13'
+    form_factor: XR
+    vendor: qualcomm
+    icon: XR_Headset
+    available_in_workbench: false
 chipsets:
   qualcomm-snapdragon-845:
     aliases:
@@ -586,7 +596,7 @@ chipsets:
     supports_fp16: true
     htp_version: 69
     soc_model: 36
-    reference_device: Samsung Galaxy S22 Ultra 5G
+    reference_device: Samsung Galaxy S22 5G
   qualcomm-qcs8450-proxy:
     aliases:
     - qualcomm-qcs8450-proxy
@@ -834,3 +844,12 @@ chipsets:
     soc_model: 60
     reference_device: Dragonwing IQ-X7181
     supports_weight_sharing: true
+  qualcomm-qcs8450:
+    aliases:
+    - qualcomm-qcs8450
+    marketing_name: Qualcomm® QCS8450
+    world: XR
+    supports_fp16: true
+    htp_version: 69
+    soc_model: 36
+    reference_device: XR2 Gen 2

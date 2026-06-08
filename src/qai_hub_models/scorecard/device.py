@@ -573,6 +573,12 @@ cs_universal = ScorecardDevice(
 ##
 # Mobile Chipsets (cs)
 ##
+cs_8_gen_1 = ScorecardDevice(
+    name="cs_8_gen_1",
+    reference_device_name="Samsung Galaxy S22 5G",
+    execution_device_name="Samsung Galaxy S22 (Family)",
+)
+
 cs_8_gen_3 = ScorecardDevice(
     name="cs_8_gen_3",
     reference_device_name="Samsung Galaxy S24",
@@ -664,12 +670,6 @@ cs_9075 = ScorecardDevice(
     reference_device_name="Dragonwing IQ-9075 EVK",
     npu_count=2,
 )
-
-
-##
-# XR Chipsets (cs)
-##
-cs_xr_8450 = ScorecardDevice(name="cs_xr_8450", reference_device_name="QCS8450 (Proxy)")
 
 
 DEFAULT_SCORECARD_DEVICE = ScorecardDevice.get("default")

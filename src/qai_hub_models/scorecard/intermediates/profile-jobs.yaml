@@ -11411,3 +11411,9 @@ whisper_small_PRECOMPILED_QNN_ONNX-cs_8550_encoder: j56v1j40p
 whisper_small_PRECOMPILED_QNN_ONNX-cs_8550_decoder: jp38m30l5
 whisper_small_PRECOMPILED_QNN_ONNX-cs_9075_encoder: j5m4z2nw5
 whisper_small_PRECOMPILED_QNN_ONNX-cs_9075_decoder: jpr9yqv9p
+resnet18_TFLITE-cs_8_gen_1: jp2jj30x5
+resnet18_QNN_DLC-cs_8_gen_1: jgl77e6e5
+resnet18_ONNX-cs_8_gen_1: jp388qvx5
+resnet18_w8a8_TFLITE-cs_8_gen_1: jp133qyk5
+resnet18_w8a8_QNN_DLC-cs_8_gen_1: j5wxxm2jp
+resnet18_w8a8_ONNX-cs_8_gen_1: jg9889jvp
