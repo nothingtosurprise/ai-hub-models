@@ -13,9 +13,9 @@ from qai_hub_models.extern.xtcocotools.coco import COCO
 from qai_hub_models.utils.bounding_box_processing import batched_nms
 
 
-class YoloV11PoseEvaluator(CocoBodyPoseEvaluator):
+class YoloPoseEvaluator(CocoBodyPoseEvaluator):
     """
-    Evaluator for YOLOv11-Pose.
+    Evaluator for YOLO Pose.
 
     Expects postprocessed model output (include_postprocessing=True):
 
@@ -53,12 +53,12 @@ class YoloV11PoseEvaluator(CocoBodyPoseEvaluator):
         gt: list[torch.Tensor],
     ) -> None:
         """
-        Process one batch of YOLOv11-Pose outputs.
+        Process one batch of YOLO Pose outputs.
 
         Parameters
         ----------
         output
-            (boxes, scores, keypoints) as returned by YoloV11PoseDetector.forward()
+            (boxes, scores, keypoints) as returned by Yolo*PoseDetector.forward()
             with include_postprocessing=True.
 
             boxes      : [batch, num_preds, 4]  (x1, y1, x2, y2) in model input space

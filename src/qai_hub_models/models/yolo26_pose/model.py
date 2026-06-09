@@ -12,10 +12,9 @@ from typing_extensions import Self
 from ultralytics.models import YOLO as ultralytics_YOLO
 from ultralytics.nn.tasks import PoseModel
 
-from qai_hub_models import Precision
 from qai_hub_models.datasets.coco_keypoints import CocoKeypointsDataset
 from qai_hub_models.models._shared.ultralytics.pose_patches import (
-    patch_ultralytics_pose_head,
+    patch_ultralytics_pose_head_26,
 )
 from qai_hub_models.models._shared.yolo.model import Yolo, yolo_detect_postprocess
 from qai_hub_models.utils.base_dataset import BaseDataset
@@ -32,22 +31,22 @@ MODEL_ASSET_VERSION = 1
 MODEL_ID = __name__.split(".")[-2]
 
 SUPPORTED_WEIGHTS = [
-    "yolo11n-pose.pt",
-    "yolo11s-pose.pt",
-    "yolo11m-pose.pt",
-    "yolo11l-pose.pt",
-    "yolo11x-pose.pt",
+    "yolo26n-pose.pt",
+    "yolo26s-pose.pt",
+    "yolo26m-pose.pt",
+    "yolo26l-pose.pt",
+    "yolo26x-pose.pt",
 ]
-DEFAULT_WEIGHTS = "yolo11n-pose.pt"
+DEFAULT_WEIGHTS = "yolo26n-pose.pt"
 
 # COCO pose: 17 keypoints x 3 values (x, y, visibility)
 NUM_KEYPOINTS = 17
 KEYPOINT_DIM = 3
 
 
-class YoloV11PoseDetector(Yolo):
+class Yolo26PoseDetector(Yolo):
     """
-    Exportable YOLOv11-Pose model — end-to-end person detection + keypoint estimation.
+    Exportable YOLO26-Pose model — end-to-end person detection + keypoint estimation.
 
     The model produces bounding boxes for detected persons together with
     17 COCO body keypoints per detection.
@@ -63,7 +62,7 @@ class YoloV11PoseDetector(Yolo):
             serialization_settings=SerializationSettings(check_trace=False),
         )
         self.include_postprocessing = include_postprocessing
-        patch_ultralytics_pose_head(model)
+        patch_ultralytics_pose_head_26(model)
 
     @classmethod
     def from_pretrained(
@@ -83,7 +82,7 @@ class YoloV11PoseDetector(Yolo):
         image: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
-        Run YOLOv11-Pose on ``image``.
+        Run YOLO26-Pose on ``image``.
 
         Parameters
         ----------
@@ -113,12 +112,10 @@ class YoloV11PoseDetector(Yolo):
         # --- keypoint reshaping ---
         # raw_kpts: [batch, num_keypoints * 3, num_anchors]
         batch, _, num_anchors = raw_kpts.shape
-        kpts = raw_kpts.permute(0, 2, 1)  # [batch, num_anchors, num_keypoints * 3]
-        kpts = kpts.reshape(batch, num_anchors, NUM_KEYPOINTS, KEYPOINT_DIM)
-
-        # Ensure keypoints and boxes stay aligned on the anchor/prediction axis.
-        assert kpts.shape[1] == boxes.shape[1], (
-            f"Keypoint/box dimension mismatch: {kpts.shape[1]} vs {boxes.shape[1]}"
+        kpts = (
+            raw_kpts.permute(0, 2, 1)
+            .contiguous()
+            .view(batch, num_anchors, NUM_KEYPOINTS, KEYPOINT_DIM)
         )
 
         return boxes, scores, kpts
@@ -129,6 +126,12 @@ class YoloV11PoseDetector(Yolo):
         return ["raw_boxes", "raw_scores", "raw_keypoints"]
 
     def get_output_spec(self) -> dict[str, TensorSpec]:
+        if not self.include_postprocessing:
+            return {
+                "raw_boxes": TensorSpec(io_type=IoType.TENSOR),
+                "raw_scores": TensorSpec(io_type=IoType.TENSOR),
+                "raw_keypoints": TensorSpec(io_type=IoType.TENSOR),
+            }
         return {
             "boxes": TensorSpec(
                 io_type=IoType.BBOX,
@@ -141,23 +144,6 @@ class YoloV11PoseDetector(Yolo):
                 io_type=IoType.TENSOR,
             ),
         }
-
-    def get_hub_quantize_options(
-        self, precision: Precision, other_options: str | None = None
-    ) -> str:
-        options = other_options or ""
-        if "--range_scheme" in options:
-            return options
-        if precision in {Precision.w8a8_mixed_int16, Precision.w8a16_mixed_int16}:
-            options += f" --range_scheme min_max --lite_mp percentage={self.get_hub_litemp_percentage(precision)};override_qtype=int16"
-        elif precision in {Precision.w8a8_mixed_fp16, Precision.w8a16_mixed_fp16}:
-            options += f" --range_scheme min_max --lite_mp percentage={self.get_hub_litemp_percentage(precision)};override_qtype=fp16"
-        else:
-            options += " --range_scheme min_max"
-        return options
-
-    def get_hub_litemp_percentage(self, precision: Precision) -> float:
-        return 10
 
     def get_evaluator(self) -> BaseEvaluator:
         from qai_hub_models.evaluators.yolo_pose_evaluator import YoloPoseEvaluator

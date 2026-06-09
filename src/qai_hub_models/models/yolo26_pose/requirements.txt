@@ -1,0 +1,4 @@
+ultralytics==8.4.45
+aiohttp==3.13.3
+aiofiles==25.1.0
+types-aiofiles==25.1.0.20251011
