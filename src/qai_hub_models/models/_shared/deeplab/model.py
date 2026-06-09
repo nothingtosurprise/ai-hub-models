@@ -5,9 +5,12 @@
 
 from __future__ import annotations
 
+import os
+
 import torch
 
 from qai_hub_models import SampleInputsType
+from qai_hub_models.configs.model_metadata import ModelMetadata
 from qai_hub_models.datasets.pascal_voc import VOCSegmentationDataset
 from qai_hub_models.evaluators.segmentation_evaluator import SegmentationOutputEvaluator
 from qai_hub_models.utils.asset_loaders import CachedWebModelAsset, load_image
@@ -25,6 +28,7 @@ from qai_hub_models.utils.input_spec import (
     IoType,
     TensorSpec,
 )
+from qai_hub_models.utils.labels import write_labels_file
 
 NUM_CLASSES = 21
 
@@ -117,6 +121,9 @@ class DeepLabV3Model(BaseModel):
     def get_calibration_dataset_cls(self) -> type[BaseDataset]:
         return VOCSegmentationDataset
 
-    @classmethod
-    def get_labels_file_name(cls) -> str | None:
-        return "voc_labels.txt"
+    def write_supplementary_files(
+        self,
+        output_dir: str | os.PathLike,
+        metadata: ModelMetadata,
+    ) -> None:
+        write_labels_file("voc_labels.txt", output_dir, metadata)

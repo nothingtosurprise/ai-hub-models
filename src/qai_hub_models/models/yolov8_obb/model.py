@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import cast
 
 import torch
@@ -13,6 +14,7 @@ from ultralytics.models import YOLO as ultralytics_YOLO
 from ultralytics.nn.tasks import OBBModel
 
 from qai_hub_models import Precision
+from qai_hub_models.configs.model_metadata import ModelMetadata
 from qai_hub_models.datasets.dota128 import Dota128Dataset
 from qai_hub_models.models._shared.ultralytics.obb_patches import (
     patch_ultralytics_obb_head,
@@ -24,6 +26,7 @@ from qai_hub_models.models._shared.yolo.model import (
 from qai_hub_models.utils.base_dataset import BaseDataset
 from qai_hub_models.utils.base_evaluator import BaseEvaluator
 from qai_hub_models.utils.base_model import SerializationSettings
+from qai_hub_models.utils.labels import write_labels_file
 
 MODEL_ASSET_VERSION = 1
 MODEL_ID = __name__.split(".")[-2]
@@ -161,9 +164,12 @@ class YoloV8OBB(Yolo):
     def get_calibration_dataset_cls(self) -> type[BaseDataset]:
         return Dota128Dataset
 
-    @staticmethod
-    def get_labels_file_name() -> str | None:
-        return "dota_v1_labels.txt"
+    def write_supplementary_files(
+        self,
+        output_dir: str | os.PathLike,
+        metadata: ModelMetadata,
+    ) -> None:
+        write_labels_file("dota_v1_labels.txt", output_dir, metadata)
 
     def get_evaluator(self) -> BaseEvaluator:
         from qai_hub_models.evaluators.obb_evaluator import OBBEvaluator

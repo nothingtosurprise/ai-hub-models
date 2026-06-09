@@ -5,10 +5,13 @@
 
 from __future__ import annotations
 
+import os
+
 import torch
 from typing_extensions import Self
 
 from qai_hub_models import Precision
+from qai_hub_models.configs.model_metadata import ModelMetadata
 from qai_hub_models.datasets.imagenet_colorization import ImagenetColorizationDataset
 from qai_hub_models.datasets.imagenette_colorization import (
     ImagenetteColorizationDataset,
@@ -25,6 +28,7 @@ from qai_hub_models.utils.input_spec import (
     IoType,
     TensorSpec,
 )
+from qai_hub_models.utils.labels import write_labels_file
 
 MODEL_ID = __name__.split(".")[-2]
 MODEL_ASSET_VERSION = 1
@@ -99,6 +103,9 @@ class DDColor(BaseModel):
         """Returns the Lite-MP percentage value for mixed precision quantization."""
         return 10.0
 
-    @classmethod
-    def get_labels_file_name(cls) -> str | None:
-        return "imagenet_labels.txt"
+    def write_supplementary_files(
+        self,
+        output_dir: str | os.PathLike,
+        metadata: ModelMetadata,
+    ) -> None:
+        write_labels_file("imagenet_labels.txt", output_dir, metadata)

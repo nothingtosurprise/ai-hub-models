@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import os
 import re
-import shutil
 from collections.abc import Callable
 from contextlib import nullcontext
 from pathlib import Path
@@ -44,7 +43,6 @@ from qai_hub_models.utils.kwarg_helpers import (
     filter_kwargs,
     filter_per_component_kwargs,
 )
-from qai_hub_models.utils.path_helpers import QAIHM_PACKAGE_ROOT
 from qai_hub_models.utils.qai_hub_helpers import (
     build_compile_options,
     build_link_options,
@@ -342,40 +340,6 @@ class BaseModel(
     def get_evaluator(self) -> BaseEvaluator:
         """Gets a class for evaluating output of this model."""
         raise NotImplementedError("No evaluator is supported for this model.")
-
-    @classmethod
-    def get_labels_file_name(cls) -> str | None:
-        """
-        Returns the name of the labels file for this model.
-
-        The labels file should exist in qai_hub_models/labels/ directory.
-        """
-        return None
-
-    def write_supplementary_files(
-        self,
-        output_dir: str | os.PathLike,
-        metadata: ModelMetadata,
-    ) -> None:
-        """
-        Write supplementary files required by the model during inference.
-        These files will be packaged alongside the model when deployed.
-
-        Parameters
-        ----------
-        output_dir
-            Directory where the supplementary files should be written.
-        metadata
-            The metadata for the compiled models.
-            metadata.supplementary_files will be populated with the files written.
-        """
-        if labels_file_name := self.get_labels_file_name():
-            out_path = Path(output_dir) / "labels.txt"
-            labels_path = QAIHM_PACKAGE_ROOT / "labels" / labels_file_name
-            shutil.copyfile(labels_path, out_path)
-            metadata.supplementary_files["labels.txt"] = (
-                "Mapping of model prediction indices -> string labels."
-            )
 
     def convert_to_torchscript(
         self, input_spec: InputSpec | None = None, check_trace: bool = True

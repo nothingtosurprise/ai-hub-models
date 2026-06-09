@@ -11,6 +11,7 @@ import torch
 from torch import nn
 from typing_extensions import Self
 
+from qai_hub_models.configs.model_metadata import ModelMetadata
 from qai_hub_models.datasets.foot_track_dataset import FootTrackDataset
 from qai_hub_models.evaluators.foot_track_evaluator import FootTrackNetEvaluator
 from qai_hub_models.models.foot_track_net.layers import (
@@ -31,6 +32,7 @@ from qai_hub_models.utils.input_spec import (
     IoType,
     TensorSpec,
 )
+from qai_hub_models.utils.labels import write_labels_file
 
 MODEL_ID = __name__.split(".")[-2]
 MODEL_ASSET_VERSION = 1
@@ -273,6 +275,9 @@ class FootTrackNet(BaseModel):
     def get_calibration_dataset_cls(self) -> type[BaseDataset]:
         return FootTrackDataset
 
-    @classmethod
-    def get_labels_file_name(cls) -> str | None:
-        return "foot_track_net_labels.txt"
+    def write_supplementary_files(
+        self,
+        output_dir: str | os.PathLike,
+        metadata: ModelMetadata,
+    ) -> None:
+        write_labels_file("foot_track_net_labels.txt", output_dir, metadata)

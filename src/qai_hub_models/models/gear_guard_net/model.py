@@ -5,11 +5,13 @@
 
 from __future__ import annotations
 
+import os
 from copy import deepcopy
 
 import torch
 from typing_extensions import Self
 
+from qai_hub_models.configs.model_metadata import ModelMetadata
 from qai_hub_models.datasets.coco_ppe import CocoPPEDataset
 from qai_hub_models.datasets.gear_guard_dataset import GearGuardDataset
 from qai_hub_models.evaluators.detection_evaluator import DetectionEvaluator
@@ -26,6 +28,7 @@ from qai_hub_models.utils.input_spec import (
     IoType,
     TensorSpec,
 )
+from qai_hub_models.utils.labels import write_labels_file
 
 MODEL_ID = __name__.split(".")[-2]
 MODEL_ASSET_VERSION = 1
@@ -362,6 +365,9 @@ class GearGuardNet(BaseModel):
     def get_calibration_dataset_cls(self) -> type[BaseDataset]:
         return CocoPPEDataset
 
-    @classmethod
-    def get_labels_file_name(cls) -> str | None:
-        return "ppe_labels.txt"
+    def write_supplementary_files(
+        self,
+        output_dir: str | os.PathLike,
+        metadata: ModelMetadata,
+    ) -> None:
+        write_labels_file("ppe_labels.txt", output_dir, metadata)

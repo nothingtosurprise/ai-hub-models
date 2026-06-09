@@ -5,9 +5,12 @@
 
 from __future__ import annotations
 
+import os
+
 import torch
 
 from qai_hub_models import SampleInputsType
+from qai_hub_models.configs.model_metadata import ModelMetadata
 from qai_hub_models.datasets.cityscapes import CityscapesDataset
 from qai_hub_models.evaluators.segmentation_evaluator import SegmentationOutputEvaluator
 from qai_hub_models.utils.asset_loaders import CachedWebModelAsset, load_image
@@ -25,6 +28,7 @@ from qai_hub_models.utils.input_spec import (
     IoType,
     TensorSpec,
 )
+from qai_hub_models.utils.labels import write_labels_file
 
 MODEL_ASSET_VERSION = 1
 MODEL_ID = __name__.split(".")[-2]
@@ -116,6 +120,9 @@ class CityscapesSegmentor(BaseModel):
     def get_calibration_dataset_cls(self) -> type[BaseDataset]:
         return CityscapesDataset
 
-    @classmethod
-    def get_labels_file_name(cls) -> str | None:
-        return "cityscapes_labels.txt"
+    def write_supplementary_files(
+        self,
+        output_dir: str | os.PathLike,
+        metadata: ModelMetadata,
+    ) -> None:
+        write_labels_file("cityscapes_labels.txt", output_dir, metadata)

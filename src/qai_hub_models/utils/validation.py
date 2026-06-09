@@ -15,7 +15,6 @@ from qai_hub_models.utils.base_model import (
     PretrainedCollectionModel,
 )
 from qai_hub_models.utils.base_multi_graph_model import MultiGraphCollectionModel
-from qai_hub_models.utils.path_helpers import QAIHM_PACKAGE_ROOT
 
 
 def _is_valid_dataset_class(dataset_cls: type) -> bool:
@@ -190,32 +189,6 @@ def validate_mixed_precision_litemp(
     ]
 
 
-def validate_labels_file(model: BaseModel) -> list[str]:
-    """
-    Validate that the labels file declared by the model exists on disk.
-
-    Parameters
-    ----------
-    model
-        The model instance to validate.
-
-    Returns
-    -------
-    list[str]
-        Error messages if the labels file is missing.
-    """
-    labels_name = model.get_labels_file_name()
-    if labels_name is None:
-        return []
-    labels_path = QAIHM_PACKAGE_ROOT / "labels" / labels_name
-    if not labels_path.exists():
-        return [
-            f"get_labels_file_name() returns '{labels_name}', "
-            f"but {labels_path} does not exist."
-        ]
-    return []
-
-
 def _component_precision_implemented(component: BaseModel) -> bool:
     try:
         component.component_precision()
@@ -325,7 +298,6 @@ def perform_runtime_model_validation(
     else:
         errors.extend(validate_io_names(model))
         errors.extend(validate_mixed_precision_litemp(model, code_gen))
-        errors.extend(validate_labels_file(model))
         errors.extend(validate_eval_datasets_have_evaluator(model))
         errors.extend(validate_eval_datasets(model))
 

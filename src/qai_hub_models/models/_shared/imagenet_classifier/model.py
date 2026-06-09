@@ -5,12 +5,14 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Callable
 
 import numpy as np
 import torch
 from typing_extensions import Self
 
+from qai_hub_models.configs.model_metadata import ModelMetadata
 from qai_hub_models.datasets.imagenet import ImagenetDataset
 from qai_hub_models.datasets.imagenette import ImagenetteDataset
 from qai_hub_models.evaluators.classification_evaluator import ClassificationEvaluator
@@ -30,6 +32,7 @@ from qai_hub_models.utils.input_spec import (
     IoType,
     TensorSpec,
 )
+from qai_hub_models.utils.labels import write_labels_file
 
 MODEL_ASSET_VERSION = 1
 MODEL_ID = __name__.split(".")[-2]
@@ -153,9 +156,12 @@ class ImagenetClassifier(BaseModel):
     def get_calibration_dataset_cls(self) -> type[BaseDataset]:
         return ImagenetteDataset
 
-    @classmethod
-    def get_labels_file_name(cls) -> str | None:
-        return "imagenet_labels.txt"
+    def write_supplementary_files(
+        self,
+        output_dir: str | os.PathLike,
+        metadata: ModelMetadata,
+    ) -> None:
+        write_labels_file("imagenet_labels.txt", output_dir, metadata)
 
 
 class ImagenetClassifierWithModelBuilder(ImagenetClassifier):
