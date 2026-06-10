@@ -510,17 +510,12 @@ class ScorecardDevice:
             and path.runtime.inference_engine in inference_engines_to_test
         ]
 
-        # We limit qnn_dlc_via_qnn_ep to just the default device.
-        # This reduces the number of jobs we run on a full scorecard by several thousand.
+        # If running "all" devices, only run qnn_ep on 6490 and the default device.
+        # Any explicitly set device will also run.
         if (
             not self.is_default
+            and self != cs_6490
             and ScorecardProfilePath.QNN_DLC_VIA_QNN_EP.enabled
-            # Only disable for non-default devices that aren't explicitly enabled.
-            # This allows users to test this path for specific devices if they want.
-            # For example:
-            #   If QAIHM_TEST_DEVICES is set to "all" -- cs_8_gen_3 will NOT run QNN_DLC_VIA_QNN_EP.
-            #
-            #   If QAIHM_TEST_DEVICES is set to "cs_8_gen_3" or "all,cs_8_gen_3" -- cs_8_gen_3 WILL run qnn_dlc_via_qnn_ep.
             and self.name not in EnabledDevicesEnvvar.get()
         ):
             out = [x for x in out if x != ScorecardProfilePath.QNN_DLC_VIA_QNN_EP]
