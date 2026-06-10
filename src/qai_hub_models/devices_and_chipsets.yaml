@@ -294,6 +294,30 @@ devices:
     form_factor: Phone
     vendor: samsung
     icon: Phone_S21
+  Samsung Galaxy S26:
+    chipset: qualcomm-snapdragon-8-elite-gen5-for-galaxy
+    os:
+      ostype: Android
+      version: '16'
+    form_factor: Phone
+    vendor: samsung
+    icon: Phone_S21
+  Samsung Galaxy S26 Ultra:
+    chipset: qualcomm-snapdragon-8-elite-gen5-for-galaxy
+    os:
+      ostype: Android
+      version: '16'
+    form_factor: Phone
+    vendor: samsung
+    icon: Phone_S21
+  Samsung Galaxy S26+:
+    chipset: qualcomm-snapdragon-8-elite-gen5-for-galaxy
+    os:
+      ostype: Android
+      version: '16'
+    form_factor: Phone
+    vendor: samsung
+    icon: Phone_S21
   Snapdragon X Elite CRD:
     chipset: qualcomm-snapdragon-x-elite
     os:
@@ -638,6 +662,17 @@ chipsets:
     htp_version: 79
     soc_model: 69
     reference_device: Samsung Galaxy S25
+    supports_weight_sharing: true
+  qualcomm-snapdragon-8-elite-gen5-for-galaxy:
+    aliases:
+    - qualcomm-snapdragon-8-elite-gen5-for-galaxy
+    - sm8850-ad
+    marketing_name: Snapdragon® 8 Elite Gen 5 For Galaxy Mobile
+    world: Mobile
+    supports_fp16: true
+    htp_version: 81
+    soc_model: 87
+    reference_device: Samsung Galaxy S26
     supports_weight_sharing: true
   qualcomm-snapdragon-x-elite:
     aliases:
