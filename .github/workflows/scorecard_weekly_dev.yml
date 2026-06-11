@@ -17,6 +17,7 @@ jobs:
           test_runtimes: default, qnn_dlc_via_qnn_ep
           test_precisions: default
           qairt_version: latest
+          delay: scorecard_collection_3h_delay
           test_scope: perf_and_accuracy
           release_scope: none
           ignore_job_cache: false
