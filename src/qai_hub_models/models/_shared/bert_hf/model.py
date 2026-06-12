@@ -109,10 +109,16 @@ class BaseBertModel(BaseModel):
 
     @classmethod
     def get_dataset_class(cls, tokenizer_name: str) -> type[WikiTextMasked]:
+        normalized_tokenizer_name = tokenizer_name.replace("/", "_").replace("-", "_")
+
         class BertWikiTextMasked(WikiTextMasked):
             def __init__(self, **kwargs: Any) -> None:
                 tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
                 super().__init__(tokenizer=tokenizer, **kwargs)
+
+            @classmethod
+            def dataset_name(cls) -> str:
+                return f"wikitext_masked_{normalized_tokenizer_name}"
 
         return BertWikiTextMasked
 
