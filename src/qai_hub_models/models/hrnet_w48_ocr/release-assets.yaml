@@ -1,23 +1,8 @@
 precisions:
   float:
     universal_assets:
-      tflite:
-        s3_key: pre_release_assets/gh_actions/26677457862/hrnet_w48_ocr-tflite-float.zip
-        tool_versions:
-          litert: 1.4.3
       onnx:
-        s3_key: pre_release_assets/gh_actions/26677457862/hrnet_w48_ocr-onnx-float.zip
-        tool_versions:
-          qairt: 2.42.0.251225135753_193295
-          onnx_runtime: 1.25.0
-  w8a16:
-    universal_assets:
-      qnn_dlc:
-        s3_key: pre_release_assets/gh_actions/26677457862/hrnet_w48_ocr-qnn_dlc-w8a16.zip
+        s3_key: pre_release_assets/gh_actions/27460081135/hrnet_w48_ocr-onnx-float.zip
         tool_versions:
           qairt: 2.45.0.260326154327
-      onnx:
-        s3_key: pre_release_assets/gh_actions/26677457862/hrnet_w48_ocr-onnx-w8a16.zip
-        tool_versions:
-          qairt: 2.42.0.251225135753_193295
           onnx_runtime: 1.25.0

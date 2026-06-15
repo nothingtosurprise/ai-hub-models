@@ -2,32 +2,28 @@ precisions:
   float:
     universal_assets:
       tflite:
-        s3_key: pre_release_assets/gh_actions/26677457862/edgetam-tflite-float.zip
+        s3_key: pre_release_assets/gh_actions/27460081135/edgetam-tflite-float.zip
         tool_versions:
           qairt: 2.45.0.260326154327
-          litert: 1.4.3
+          litert: 1.4.4
       qnn_dlc:
-        s3_key: pre_release_assets/gh_actions/26677457862/edgetam-qnn_dlc-float.zip
+        s3_key: pre_release_assets/gh_actions/27460081135/edgetam-qnn_dlc-float.zip
         tool_versions:
           qairt: 2.45.0.260326154327
       onnx:
-        s3_key: pre_release_assets/gh_actions/26677457862/edgetam-onnx-float.zip
+        s3_key: pre_release_assets/gh_actions/27460081135/edgetam-onnx-float.zip
         tool_versions:
-          qairt: 2.42.0.251225135753_193295
+          qairt: 2.45.0.260326154327
           onnx_runtime: 1.25.0
   w8a8:
     universal_assets:
       tflite:
-        s3_key: pre_release_assets/gh_actions/26677457862/edgetam-tflite-w8a8.zip
+        s3_key: pre_release_assets/gh_actions/27460081135/edgetam-tflite-w8a8.zip
         tool_versions:
           qairt: 2.45.0.260326154327
-          litert: 1.4.3
-      qnn_dlc:
-        s3_key: pre_release_assets/gh_actions/26677457862/edgetam-qnn_dlc-w8a8.zip
-        tool_versions:
-          qairt: 2.45.0.260326154327
+          litert: 1.4.4
       onnx:
-        s3_key: pre_release_assets/gh_actions/26677457862/edgetam-onnx-w8a8.zip
+        s3_key: pre_release_assets/gh_actions/27460081135/edgetam-onnx-w8a8.zip
         tool_versions:
-          qairt: 2.42.0.251225135753_193295
+          qairt: 2.45.0.260326154327
           onnx_runtime: 1.25.0

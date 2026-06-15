@@ -5,10 +5,10 @@ external_repos:
     patches_filename: fomm_patches.diff
 disabled_paths:
   float:
-    tflite:
-      scorecard_failure: 'Failing jobs: jpxm6rm8g'
     qnn_dlc:
-      scorecard_failure: 'Failing jobs: j576ln7ng'
+      scorecard_failure: 'Failing jobs: j56vkn3np'
+    tflite:
+      scorecard_failure: 'Failing jobs: jpv4jvrrp'
 is_collection_model: true
 readme_install_system_deps: |
   #### Linux

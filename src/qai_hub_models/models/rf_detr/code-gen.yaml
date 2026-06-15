@@ -3,5 +3,9 @@ external_repos:
     repo_url: https://github.com/roboflow/rf-detr.git
     commit_sha: 1e63dbad402eea10f110e86013361d6b02ee0c09
 has_on_target_demo: true
+disabled_paths:
+  float:
+    qnn_dlc:
+      scorecard_failure: 'Failing jobs: jp88lyvop'
 outputs_to_skip_validation:
   '2': Boxes with low confidence disagree on class index between torch and on-device

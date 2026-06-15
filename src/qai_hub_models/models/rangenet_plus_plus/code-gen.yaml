@@ -7,4 +7,4 @@ has_on_target_demo: true
 disabled_paths:
   float:
     qnn_dlc:
-      scorecard_failure: 'Failing jobs: jpv40xekp'
+      scorecard_failure: 'Failing jobs: jgd0jn0kp'

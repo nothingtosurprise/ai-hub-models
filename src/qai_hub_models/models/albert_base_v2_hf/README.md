@@ -1,6 +1,3 @@
-> [!WARNING]
-> This model is not published. Use with caution; it may not meet performance/accuracy standards and may not support some runtimes or chipsets/devices. We do not provide support for unpublished models. If this model was previously published, use earlier releases.
-
 # [Albert-Base-V2-Hf: Language model for masked language modeling and general-purpose NLP tasks](https://aihub.qualcomm.com/models/albert_base_v2_hf)
 
 ALBERT is a lightweight BERT model designed for efficient self-supervised learning of language representations. It can be used for masked language modeling and as a backbone for various NLP tasks.

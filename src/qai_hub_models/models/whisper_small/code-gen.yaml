@@ -1,3 +1,4 @@
+disabled_paths: {}
 is_collection_model: true
 requires_aot_prepare: true
 readme_install_system_deps: |

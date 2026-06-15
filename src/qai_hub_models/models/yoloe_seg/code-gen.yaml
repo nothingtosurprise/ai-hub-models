@@ -3,5 +3,16 @@ supported_precisions:
 - w8a8
 - w8a16
 has_on_target_demo: true
+disabled_paths:
+  w8a16:
+    qnn_dlc:
+      scorecard_failure: 'Failing jobs: jpe2j82vp'
+    onnx:
+      scorecard_failure: 'Failing jobs: jgd0j80zp'
+  w8a8:
+    qnn_dlc:
+      scorecard_failure: 'Failing jobs: j5qwjzzo5'
+    onnx:
+      scorecard_failure: 'Failing jobs: jgomjo4k5'
 outputs_to_skip_validation:
   '3': Boxes with low confidence disagree on class index between torch and on-device

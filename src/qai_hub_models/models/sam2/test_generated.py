@@ -81,11 +81,11 @@ ENABLED_PRECISION_RUNTIMES: dict[Precision, list[TargetRuntime]] = {
 #   For example, models that allow JIT (on-device) compile will not test AOT runtimes; we assume that if it works on JIT it will work on AOT.
 PASSING_PRECISION_RUNTIMES: dict[Precision, list[TargetRuntime]] = {
     Precision.float: [
+        TargetRuntime.QNN_DLC,
         TargetRuntime.ONNX,
     ],
     Precision.w8a8: [
         TargetRuntime.TFLITE,
-        TargetRuntime.QNN_DLC,
         TargetRuntime.ONNX,
     ],
 }

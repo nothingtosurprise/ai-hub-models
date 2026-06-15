@@ -225,6 +225,7 @@ and many more.
 | [Segment-Anything-Model-2](https://aihub.qualcomm.com/models/sam2) | [qai_hub_models.models.sam2](src/qai_hub_models/models/sam2/README.md) |
 | [Unet-Segmentation](https://aihub.qualcomm.com/models/unet_segmentation) | [qai_hub_models.models.unet_segmentation](src/qai_hub_models/models/unet_segmentation/README.md) |
 | [YOLO26-Segmentation](https://aihub.qualcomm.com/models/yolo26_seg) | [qai_hub_models.models.yolo26_seg](src/qai_hub_models/models/yolo26_seg/README.md) |
+| [YOLOE-Segmentation](https://aihub.qualcomm.com/models/yoloe_seg) | [qai_hub_models.models.yoloe_seg](src/qai_hub_models/models/yoloe_seg/README.md) |
 | [YOLOv11-Segmentation](https://aihub.qualcomm.com/models/yolov11_seg) | [qai_hub_models.models.yolov11_seg](src/qai_hub_models/models/yolov11_seg/README.md) |
 | [YOLOv8-Segmentation](https://aihub.qualcomm.com/models/yolov8_seg) | [qai_hub_models.models.yolov8_seg](src/qai_hub_models/models/yolov8_seg/README.md) |
 | | |
@@ -300,6 +301,7 @@ and many more.
 | [BEVDet](https://aihub.qualcomm.com/models/bevdet) | [qai_hub_models.models.bevdet](src/qai_hub_models/models/bevdet/README.md) |
 | [BEVFusion](https://aihub.qualcomm.com/models/bevfusion_det) | [qai_hub_models.models.bevfusion_det](src/qai_hub_models/models/bevfusion_det/README.md) |
 | [CVT](https://aihub.qualcomm.com/models/cvt) | [qai_hub_models.models.cvt](src/qai_hub_models/models/cvt/README.md) |
+| [CenterNet-3D](https://aihub.qualcomm.com/models/centernet_3d) | [qai_hub_models.models.centernet_3d](src/qai_hub_models/models/centernet_3d/README.md) |
 | [CenterPoint](https://aihub.qualcomm.com/models/centerpoint) | [qai_hub_models.models.centerpoint](src/qai_hub_models/models/centerpoint/README.md) |
 | [GKT](https://aihub.qualcomm.com/models/gkt) | [qai_hub_models.models.gkt](src/qai_hub_models/models/gkt/README.md) |
 | [RangeNet-Plus-Plus](https://aihub.qualcomm.com/models/rangenet_plus_plus) | [qai_hub_models.models.rangenet_plus_plus](src/qai_hub_models/models/rangenet_plus_plus/README.md) |
@@ -330,7 +332,6 @@ and many more.
 | | |
 | **Speech Recognition**
 | [Distil-Whisper](https://aihub.qualcomm.com/models/distil_whisper) | [qai_hub_models.models.distil_whisper](src/qai_hub_models/models/distil_whisper/README.md) |
-| [HuggingFace-WavLM-Base-Plus](https://aihub.qualcomm.com/models/huggingface_wavlm_base_plus) | [qai_hub_models.models.huggingface_wavlm_base_plus](src/qai_hub_models/models/huggingface_wavlm_base_plus/README.md) |
 | [Whisper-Base](https://aihub.qualcomm.com/models/whisper_base) | [qai_hub_models.models.whisper_base](src/qai_hub_models/models/whisper_base/README.md) |
 | [Whisper-Large-V3-Turbo](https://aihub.qualcomm.com/models/whisper_large_v3_turbo) | [qai_hub_models.models.whisper_large_v3_turbo](src/qai_hub_models/models/whisper_large_v3_turbo/README.md) |
 | [Whisper-Medium](https://aihub.qualcomm.com/models/whisper_medium) | [qai_hub_models.models.whisper_medium](src/qai_hub_models/models/whisper_medium/README.md) |
@@ -361,6 +362,8 @@ and many more.
 | [Stable-Diffusion-v2.1](https://aihub.qualcomm.com/models/stable_diffusion_v2_1) | [qai_hub_models.models.stable_diffusion_v2_1](src/qai_hub_models/models/stable_diffusion_v2_1/README.md) |
 | | |
 | **Text Generation**
+| [Albert-Base-V2-Hf](https://aihub.qualcomm.com/models/albert_base_v2_hf) | [qai_hub_models.models.albert_base_v2_hf](src/qai_hub_models/models/albert_base_v2_hf/README.md) |
+| [Bert-Base-Uncased-Hf](https://aihub.qualcomm.com/models/bert_base_uncased_hf) | [qai_hub_models.models.bert_base_uncased_hf](src/qai_hub_models/models/bert_base_uncased_hf/README.md) |
 | [Distil-Bert-Base-Uncased-Hf](https://aihub.qualcomm.com/models/distil_bert_base_uncased_hf) | [qai_hub_models.models.distil_bert_base_uncased_hf](src/qai_hub_models/models/distil_bert_base_uncased_hf/README.md) |
 | [Electra-Bert-Base-Discrim-Google](https://aihub.qualcomm.com/models/electra_bert_base_discrim_google) | [qai_hub_models.models.electra_bert_base_discrim_google](src/qai_hub_models/models/electra_bert_base_discrim_google/README.md) |
 | [Falcon3-7B-Instruct](https://aihub.qualcomm.com/models/falcon_v3_7b_instruct) | [qai_hub_models.models.falcon_v3_7b_instruct](src/qai_hub_models/models/falcon_v3_7b_instruct/README.md) |

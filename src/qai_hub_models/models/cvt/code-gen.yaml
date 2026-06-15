@@ -10,6 +10,6 @@ has_on_target_demo: true
 disabled_paths:
   w8a16_mixed_fp16:
     qnn_dlc:
-      scorecard_failure: 'Failing jobs: j56vn7vvp'
+      scorecard_failure: 'Failing jobs: jgl7d2j85'
 global_requirements_incompatible: true
 pip_pre_build_reqs: nuscenes-devkit==1.2.0 --no-deps

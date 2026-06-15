@@ -3,8 +3,10 @@ has_on_target_demo: true
 disabled_paths:
   float:
     qnn_dlc:
+      scorecard_failure: 'Profiling jobs slower than 4000ms: j5wxkj16p'
+      scorecard_accuracy_failure: Torch and On-device accuracy diff (-66.000 mIOU) above threshold (10.0 mIOU)
+    onnx:
+      scorecard_failure: 'Profiling jobs slower than 4000ms: jp139rj25'
       scorecard_accuracy_failure: Torch and On-device accuracy diff (-66.000 mIOU) above threshold (10.0 mIOU)
     tflite:
-      scorecard_failure: 'Failing jobs: j5q9rzl4p'
-    onnx:
-      scorecard_accuracy_failure: Torch and On-device accuracy diff (-66.000 mIOU) above threshold (10.0 mIOU)
+      scorecard_failure: 'Failing jobs: j5m47zw95'

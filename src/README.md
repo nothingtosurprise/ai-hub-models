@@ -225,6 +225,7 @@ and many more.
 | [Segment-Anything-Model-2](https://aihub.qualcomm.com/models/sam2) | `qai_hub_models.models.sam2` |
 | [Unet-Segmentation](https://aihub.qualcomm.com/models/unet_segmentation) | `qai_hub_models.models.unet_segmentation` |
 | [YOLO26-Segmentation](https://aihub.qualcomm.com/models/yolo26_seg) | `qai_hub_models.models.yolo26_seg` |
+| [YOLOE-Segmentation](https://aihub.qualcomm.com/models/yoloe_seg) | `qai_hub_models.models.yoloe_seg` |
 | [YOLOv11-Segmentation](https://aihub.qualcomm.com/models/yolov11_seg) | `qai_hub_models.models.yolov11_seg` |
 | [YOLOv8-Segmentation](https://aihub.qualcomm.com/models/yolov8_seg) | `qai_hub_models.models.yolov8_seg` |
 | | |
@@ -300,6 +301,7 @@ and many more.
 | [BEVDet](https://aihub.qualcomm.com/models/bevdet) | `qai_hub_models.models.bevdet` |
 | [BEVFusion](https://aihub.qualcomm.com/models/bevfusion_det) | `qai_hub_models.models.bevfusion_det` |
 | [CVT](https://aihub.qualcomm.com/models/cvt) | `qai_hub_models.models.cvt` |
+| [CenterNet-3D](https://aihub.qualcomm.com/models/centernet_3d) | `qai_hub_models.models.centernet_3d` |
 | [CenterPoint](https://aihub.qualcomm.com/models/centerpoint) | `qai_hub_models.models.centerpoint` |
 | [GKT](https://aihub.qualcomm.com/models/gkt) | `qai_hub_models.models.gkt` |
 | [RangeNet-Plus-Plus](https://aihub.qualcomm.com/models/rangenet_plus_plus) | `qai_hub_models.models.rangenet_plus_plus` |
@@ -330,7 +332,6 @@ and many more.
 | | |
 | **Speech Recognition**
 | [Distil-Whisper](https://aihub.qualcomm.com/models/distil_whisper) | `qai_hub_models.models.distil_whisper` |
-| [HuggingFace-WavLM-Base-Plus](https://aihub.qualcomm.com/models/huggingface_wavlm_base_plus) | `qai_hub_models.models.huggingface_wavlm_base_plus` |
 | [Whisper-Base](https://aihub.qualcomm.com/models/whisper_base) | `qai_hub_models.models.whisper_base` |
 | [Whisper-Large-V3-Turbo](https://aihub.qualcomm.com/models/whisper_large_v3_turbo) | `qai_hub_models.models.whisper_large_v3_turbo` |
 | [Whisper-Medium](https://aihub.qualcomm.com/models/whisper_medium) | `qai_hub_models.models.whisper_medium` |
@@ -361,6 +362,8 @@ and many more.
 | [Stable-Diffusion-v2.1](https://aihub.qualcomm.com/models/stable_diffusion_v2_1) | `qai_hub_models.models.stable_diffusion_v2_1` |
 | | |
 | **Text Generation**
+| [Albert-Base-V2-Hf](https://aihub.qualcomm.com/models/albert_base_v2_hf) | `qai_hub_models.models.albert_base_v2_hf` |
+| [Bert-Base-Uncased-Hf](https://aihub.qualcomm.com/models/bert_base_uncased_hf) | `qai_hub_models.models.bert_base_uncased_hf` |
 | [Distil-Bert-Base-Uncased-Hf](https://aihub.qualcomm.com/models/distil_bert_base_uncased_hf) | `qai_hub_models.models.distil_bert_base_uncased_hf` |
 | [Electra-Bert-Base-Discrim-Google](https://aihub.qualcomm.com/models/electra_bert_base_discrim_google) | `qai_hub_models.models.electra_bert_base_discrim_google` |
 | [Falcon3-7B-Instruct](https://aihub.qualcomm.com/models/falcon_v3_7b_instruct) | `qai_hub_models.models.falcon_v3_7b_instruct` |

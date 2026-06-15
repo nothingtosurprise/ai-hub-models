@@ -2,18 +2,4 @@ supported_precisions:
 - float
 - w8a8
 has_on_target_demo: true
-disabled_paths:
-  w8a8:
-    qnn_dlc:
-      scorecard_failure: Some expected profile jobs were missing.
-    onnx:
-      scorecard_failure: Some expected profile jobs were missing.
-    tflite:
-      scorecard_failure: Some expected profile jobs were missing.
-  float:
-    qnn_dlc:
-      scorecard_failure: Some expected profile jobs were missing.
-    tflite:
-      scorecard_failure: Some expected profile jobs were missing.
-    onnx:
-      scorecard_failure: Some expected profile jobs were missing.
+disabled_paths: {}

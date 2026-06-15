@@ -9,4 +9,4 @@ has_on_target_demo: true
 disabled_paths:
   w8a16:
     qnn_dlc:
-      scorecard_failure: 'Failing jobs: jp3811wl5'
+      scorecard_failure: 'Failing jobs: j5m47jzq5'

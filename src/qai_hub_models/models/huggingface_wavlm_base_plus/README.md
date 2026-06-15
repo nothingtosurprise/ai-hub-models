@@ -1,3 +1,6 @@
+> [!WARNING]
+> This model is not published. Use with caution; it may not meet performance/accuracy standards and may not support some runtimes or chipsets/devices. We do not provide support for unpublished models. If this model was previously published, use earlier releases.
+
 # [HuggingFace-WavLM-Base-Plus: Real-time Speech processing](https://aihub.qualcomm.com/models/huggingface_wavlm_base_plus)
 
 HuggingFaceWavLMBasePlus is a real time speech processing backbone based on Microsoft's WavLM model.

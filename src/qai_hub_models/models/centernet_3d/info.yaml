@@ -1,6 +1,6 @@
 name: CenterNet-3D
 id: centernet_3d
-status: pending
+status: published
 headline: Construct a bird’s eye view from sensors mounted on a vehicle.
 domain: Computer Vision
 description: CenterNet is a machine learning model for generating a birds eye view represenation from the sensors(cameras) mounted on a vehicle.
@@ -29,4 +29,3 @@ research_paper: https://arxiv.org/abs/1904.07850
 research_paper_title: Objects as Points
 source_repo: https://github.com/xingyizhou/CenterNet
 license: https://github.com/xingyizhou/CenterNet/blob/master/LICENSE
-status_reason: model does not support at least one export path

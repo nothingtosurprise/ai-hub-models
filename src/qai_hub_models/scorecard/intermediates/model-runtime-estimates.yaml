@@ -1,746 +1,756 @@
-source_action_id: '27055659471'
+source_action_id: '27460081135'
 models:
   act:
-    job_submission: 243.4
-    export_test: 97.3
-    accuracy: 37.6
+    job_submission: 185.3
+    export_test: 125.9
+    accuracy: 37.8
   albert_base_v2_hf:
-    job_submission: 1500.9
-    export_test: 157.2
-    accuracy: 44.2
+    job_submission: 1504.8
+    export_test: 175.5
+    accuracy: 64.6
   aotgan:
-    job_submission: 439.6
-    export_test: 51.9
-    accuracy: 246.5
+    job_submission: 436.8
+    export_test: 57.1
+    accuracy: 334.6
   beit:
-    job_submission: 4807.0
-    export_test: 288.7
-    accuracy: 84.1
+    job_submission: 4735.0
+    export_test: 288.8
+    accuracy: 159.5
   bert_base_uncased_hf:
-    job_submission: 1858.2
-    export_test: 241.2
-    accuracy: 51.0
+    job_submission: 1792.1
+    export_test: 235.0
+    accuracy: 53.1
   bevdet:
-    job_submission: 728.5
-    export_test: 109.2
-    accuracy: 141.1
+    job_submission: 688.5
+    export_test: 112.6
+    accuracy: 146.3
   bevfusion_det:
-    job_submission: 2368.7
-    export_test: 475.1
-    accuracy: 63.3
+    job_submission: 6901.2
+    export_test: 499.3
+    accuracy: 79.5
   cavaface:
-    job_submission: 241.9
-    export_test: 98.6
-    accuracy: 25.3
+    job_submission: 165.5
+    export_test: 106.3
+    accuracy: 31.5
   centernet_2d:
-    job_submission: 731.9
-    export_test: 259.4
-    accuracy: 162.1
+    job_submission: 5366.9
+    export_test: 310.5
+    accuracy: 267.6
   centernet_3d:
-    job_submission: 5442.3
-    export_test: 295.7
-    accuracy: 97.1
+    job_submission: 7737.5
+    export_test: 348.2
+    accuracy: 118.6
   centernet_pose:
-    job_submission: 468.8
-    export_test: 247.0
-    accuracy: 165.9
+    job_submission: 709.1
+    export_test: 274.4
+    accuracy: 242.9
   centerpoint:
-    job_submission: 201.0
-    export_test: 56.0
-    accuracy: 47.0
+    job_submission: 191.7
+    export_test: 57.6
+    accuracy: 52.1
   conditional_detr_resnet50:
-    job_submission: 1013.9
-    export_test: 136.7
-    accuracy: 142.6
+    job_submission: 957.9
+    export_test: 133.0
+    accuracy: 158.5
   controlnet_canny:
-    job_submission: 4849.4
-    export_test: 3191.3
-    accuracy: 863.0
+    job_submission: 4685.0
+    export_test: 3174.7
+    accuracy: 885.1
   convnext_base:
-    job_submission: 4700.0
-    export_test: 186.4
-    accuracy: 77.0
+    job_submission: 4770.6
+    export_test: 185.3
+    accuracy: 92.0
   convnext_tiny:
-    job_submission: 1671.9
-    export_test: 104.4
-    accuracy: 72.9
+    job_submission: 1794.7
+    export_test: 116.8
+    accuracy: 75.3
   crestereo:
-    job_submission: 207.3
-    export_test: 46.3
-    accuracy: 77.7
+    job_submission: 181.2
+    export_test: 51.9
+    accuracy: 81.3
   cvt:
-    job_submission: 532.5
-    export_test: 64.7
-    accuracy: 54.3
+    job_submission: 598.7
+    export_test: 65.5
+    accuracy: 56.9
   ddcolor:
-    job_submission: 476.2
-    export_test: 96.9
-    accuracy: 105.0
+    job_submission: 387.9
+    export_test: 95.7
+    accuracy: 139.1
   ddrnet23_slim:
-    job_submission: 771.6
-    export_test: 85.3
-    accuracy: 223.5
+    job_submission: 638.1
+    export_test: 89.1
+    accuracy: 239.7
   deepbox:
-    job_submission: 441.3
-    export_test: 229.2
-    accuracy: 66.2
+    job_submission: 368.3
+    export_test: 163.6
+    accuracy: 55.3
   deeplab_xception:
-    job_submission: 1087.5
-    export_test: 130.1
-    accuracy: 170.5
+    job_submission: 909.6
+    export_test: 136.8
+    accuracy: 173.3
   deeplabv3_plus_mobilenet:
-    job_submission: 864.0
-    export_test: 115.3
-    accuracy: 215.3
+    job_submission: 865.2
+    export_test: 123.9
+    accuracy: 320.4
   deeplabv3_resnet50:
-    job_submission: 445.3
+    job_submission: 518.5
     export_test: 0.0
     accuracy: 0.0
   deformable_detr:
-    job_submission: 2183.9
-    export_test: 101.2
-    accuracy: 11.2
+    job_submission: 2056.9
+    export_test: 104.3
+    accuracy: 34.5
   densenet121:
-    job_submission: 858.6
-    export_test: 141.3
-    accuracy: 114.4
+    job_submission: 843.0
+    export_test: 156.8
+    accuracy: 116.9
   depth_anything:
-    job_submission: 681.2
-    export_test: 101.4
-    accuracy: 114.5
-  depth_anything_v2:
-    job_submission: 556.3
-    export_test: 98.3
-    accuracy: 94.5
-  depth_anything_v3:
-    job_submission: 297.6
-    export_test: 67.0
-    accuracy: 62.6
-  detectron2_detection:
-    job_submission: 847.3
-    export_test: 183.6
-    accuracy: 92.8
-  detr_resnet101:
-    job_submission: 2144.8
-    export_test: 147.3
-    accuracy: 135.2
-  detr_resnet101_dc5:
-    job_submission: 496.2
-    export_test: 92.2
-    accuracy: 84.1
-  detr_resnet50:
-    job_submission: 785.6
-    export_test: 123.9
-    accuracy: 121.8
-  detr_resnet50_dc5:
-    job_submission: 1101.4
-    export_test: 122.4
-    accuracy: 128.0
-  distil_bert_base_uncased_hf:
-    job_submission: 1262.4
-    export_test: 180.1
-    accuracy: 43.7
-  distil_whisper:
-    job_submission: 474.9
-    export_test: 549.0
-    accuracy: 59.8
-  dla102x:
-    job_submission: 563.2
-    export_test: 113.2
-    accuracy: 85.7
-  dncnn:
-    job_submission: 373.8
-    export_test: 76.1
-    accuracy: 59.5
-  easyocr:
-    job_submission: 677.3
-    export_test: 118.4
-    accuracy: 45.8
-  edgetam:
-    job_submission: 818.1
-    export_test: 121.9
-    accuracy: 88.0
-  efficientformer:
-    job_submission: 473.0
-    export_test: 82.9
-    accuracy: 87.9
-  efficientnet_b0:
-    job_submission: 337.0
-    export_test: 74.1
-    accuracy: 72.8
-  efficientnet_b4:
-    job_submission: 829.9
-    export_test: 92.5
-    accuracy: 144.7
-  efficientnet_v2_s:
-    job_submission: 736.6
-    export_test: 95.5
-    accuracy: 143.0
-  efficientvit_b2_cls:
-    job_submission: 764.2
-    export_test: 109.7
-    accuracy: 76.6
-  efficientvit_l2_cls:
-    job_submission: 1148.2
-    export_test: 155.6
-    accuracy: 87.1
-  efficientvit_l2_seg:
-    job_submission: 504.7
-    export_test: 63.5
-    accuracy: 151.0
-  electra_bert_base_discrim_google:
-    job_submission: 392.2
-    export_test: 136.8
-    accuracy: 36.5
-  esrgan:
-    job_submission: 846.6
-    export_test: 88.6
-    accuracy: 166.4
-  eyegaze:
-    job_submission: 443.6
-    export_test: 64.4
-    accuracy: 287.8
-  face_attrib_net:
-    job_submission: 412.8
-    export_test: 91.0
-    accuracy: 55.5
-  face_det_lite:
-    job_submission: 780.8
-    export_test: 133.8
-    accuracy: 403.7
-  facemap_3dmm:
-    job_submission: 386.3
-    export_test: 84.7
-    accuracy: 55.4
-  fastsam_s:
-    job_submission: 148.4
-    export_test: 49.6
-    accuracy: 16.1
-  fastsam_x:
-    job_submission: 235.8
-    export_test: 103.3
-    accuracy: 25.1
-  fcn_resnet50:
-    job_submission: 2572.5
-    export_test: 121.4
-    accuracy: 55.1
-  ffnet_122ns_lowres:
-    job_submission: 707.0
-    export_test: 120.3
-    accuracy: 184.4
-  ffnet_40s:
-    job_submission: 693.9
-    export_test: 95.1
-    accuracy: 237.4
-  ffnet_54s:
-    job_submission: 523.7
-    export_test: 100.7
-    accuracy: 238.1
-  ffnet_78s:
-    job_submission: 546.5
-    export_test: 111.6
-    accuracy: 236.7
-  ffnet_78s_lowres:
-    job_submission: 520.0
-    export_test: 113.8
-    accuracy: 176.1
-  fomm:
-    job_submission: 321.5
-    export_test: 85.6
-    accuracy: 24.4
-  foot_track_net:
-    job_submission: 1468.5
-    export_test: 109.5
-    accuracy: 166.4
-  gear_guard_net:
-    job_submission: 513.0
-    export_test: 130.0
-    accuracy: 110.7
-  gkt:
-    job_submission: 3874.9
-    export_test: 290.7
-    accuracy: 37.5
-  googlenet:
-    job_submission: 603.0
-    export_test: 86.5
-    accuracy: 89.3
-  gpunet:
-    job_submission: 564.6
-    export_test: 125.9
-    accuracy: 111.1
-  hrnet_face:
-    job_submission: 545.5
-    export_test: 91.1
-    accuracy: 123.5
-  hrnet_pose:
-    job_submission: 974.1
-    export_test: 158.2
-    accuracy: 216.0
-  hrnet_w48_ocr:
-    job_submission: 1613.5
-    export_test: 148.5
-    accuracy: 372.3
-  huggingface_wavlm_base_plus:
-    job_submission: 599.4
-    export_test: 130.0
-    accuracy: 30.6
-  inception_v3:
-    job_submission: 658.7
-    export_test: 110.6
-    accuracy: 124.0
-  internimage:
-    job_submission: 2276.4
-    export_test: 618.5
-    accuracy: 81.7
-  lama_dilated:
-    job_submission: 482.3
-    export_test: 78.7
-    accuracy: 308.8
-  levit:
-    job_submission: 1073.0
-    export_test: 109.5
-    accuracy: 102.6
-  litehrnet:
-    job_submission: 1011.3
-    export_test: 41.8
-    accuracy: 74.0
-  llama_v3_2_1b_instruct:
-    job_submission: 600.8
-  mask2former:
-    job_submission: 1931.5
-    export_test: 337.7
-    accuracy: 133.4
-  maskrcnn:
-    job_submission: 233.8
-    export_test: 60.2
-    accuracy: 39.0
-  mediapipe_face:
-    job_submission: 432.6
-    export_test: 88.4
-    accuracy: 38.7
-  mediapipe_hand:
-    job_submission: 189.7
-    export_test: 51.4
-    accuracy: 24.2
-  mediapipe_hand_gesture:
-    job_submission: 713.3
-    export_test: 110.1
-    accuracy: 49.4
-  mediapipe_pose:
-    job_submission: 850.6
-    export_test: 540.5
-    accuracy: 33.0
-  mediapipe_selfie:
-    job_submission: 442.1
-    export_test: 104.1
-    accuracy: 83.7
-  melotts_en:
-    job_submission: 3284.0
-    export_test: 445.4
-    accuracy: 88.8
-  melotts_es:
-    job_submission: 2912.7
-    export_test: 319.0
-    accuracy: 66.1
-  melotts_zh:
-    job_submission: 1291.4
-    export_test: 464.9
-    accuracy: 74.5
-  midas:
-    job_submission: 574.5
-    export_test: 100.6
-    accuracy: 85.2
-  minilm_v2:
-    job_submission: 331.5
-    export_test: 117.1
-    accuracy: 49.0
-  mnasnet05:
-    job_submission: 462.3
-    export_test: 69.3
-    accuracy: 71.3
-  mobile_bert_uncased_google:
-    job_submission: 876.1
-    export_test: 117.3
-    accuracy: 53.2
-  mobile_vit:
-    job_submission: 601.0
-    export_test: 77.5
-    accuracy: 97.5
-  mobilenet_v2:
-    job_submission: 642.8
-    export_test: 141.0
-    accuracy: 153.7
-  mobilenet_v3_large:
-    job_submission: 311.2
-    export_test: 75.7
-    accuracy: 73.0
-  mobilenet_v3_small:
-    job_submission: 281.4
-    export_test: 69.8
-    accuracy: 72.7
-  mobilesam:
-    job_submission: 231.3
-    export_test: 56.3
-    accuracy: 37.9
-  movenet:
-    job_submission: 367.1
-    export_test: 62.2
-    accuracy: 134.0
-  nafnet_deblur:
-    job_submission: 775.7
-    export_test: 149.2
-    accuracy: 192.7
-  nafnet_denoise:
-    job_submission: 607.9
-    export_test: 211.7
-    accuracy: 92.5
-  nafssr:
-    job_submission: 2685.9
-    export_test: 532.6
-    accuracy: 73.5
-  nasnet:
-    job_submission: 1686.3
-    export_test: 176.4
-    accuracy: 132.5
-  nomic_embed_text:
-    job_submission: 450.5
-    export_test: 173.0
-    accuracy: 370.1
-  openai_clip:
-    job_submission: 384.0
-    export_test: 401.2
-    accuracy: 27.9
-  opus_mt_en_es:
-    job_submission: 385.9
-    export_test: 835.8
-    accuracy: 25.3
-  opus_mt_en_zh:
-    job_submission: 405.0
-    export_test: 757.2
-    accuracy: 29.0
-  opus_mt_es_en:
-    job_submission: 404.5
-    export_test: 848.3
-    accuracy: 25.2
-  opus_mt_zh_en:
-    job_submission: 562.1
-    export_test: 751.1
-    accuracy: 24.8
-  pi05:
-    job_submission: 4980.2
-    export_test: 4308.4
-    accuracy: 2553.0
-  pidnet:
-    job_submission: 717.5
-    export_test: 91.1
-    accuracy: 252.9
-  pipertts_de:
-    job_submission: 455.5
-    export_test: 354.8
-    accuracy: 61.3
-  pipertts_en:
-    job_submission: 453.7
-    export_test: 347.6
-    accuracy: 60.2
-  pipertts_it:
-    job_submission: 450.1
-    export_test: 338.5
-    accuracy: 45.0
-  pointnet:
-    job_submission: 134.4
-    export_test: 43.1
-    accuracy: 13.4
-  posenet_mobilenet:
-    job_submission: 666.2
-    export_test: 122.5
-    accuracy: 404.6
-  pspnet:
-    job_submission: 529.9
-    export_test: 166.0
-    accuracy: 503.3
-  quicksrnetlarge:
-    job_submission: 367.8
-    export_test: 76.3
-    accuracy: 136.5
-  quicksrnetmedium:
-    job_submission: 332.8
-    export_test: 74.0
-    accuracy: 124.7
-  quicksrnetsmall:
-    job_submission: 329.8
-    export_test: 73.1
-    accuracy: 123.9
-  qwen2_5_vl_7b_instruct:
-    job_submission: 4321.9
-  rangenet_plus_plus:
-    job_submission: 229.8
-    export_test: 77.1
-    accuracy: 42.9
-  real_esrgan_general_x4v3:
-    job_submission: 367.9
-    export_test: 79.5
-    accuracy: 121.0
-  real_esrgan_x4plus:
-    job_submission: 923.0
-    export_test: 105.1
-    accuracy: 242.2
-  regnet:
-    job_submission: 531.9
-    export_test: 98.8
-    accuracy: 96.7
-  regnet_y_800mf:
-    job_submission: 401.8
-    export_test: 86.0
-    accuracy: 85.1
-  resnet101:
-    job_submission: 648.5
-    export_test: 140.4
-    accuracy: 91.7
-  resnet18:
-    job_submission: 410.8
-    export_test: 93.0
-    accuracy: 83.0
-  resnet34_ssd1200:
-    job_submission: 1047.7
-    export_test: 57.5
-    accuracy: 107.6
-  resnet50:
-    job_submission: 515.9
-    export_test: 113.6
-    accuracy: 83.9
-  resnet_2plus1d:
-    job_submission: 1052.5
-    export_test: 128.3
-    accuracy: 133.8
-  resnet_3d:
-    job_submission: 611.9
-    export_test: 132.5
-    accuracy: 111.1
-  resnet_mixed:
-    job_submission: 454.6
-    export_test: 84.3
-    accuracy: 98.5
-  resnext101:
-    job_submission: 929.1
-    export_test: 195.7
-    accuracy: 95.7
-  resnext50:
-    job_submission: 536.6
-    export_test: 116.0
-    accuracy: 85.2
-  rf_detr:
-    job_submission: 400.9
-    export_test: 65.7
-    accuracy: 90.1
-  rtmdet:
-    job_submission: 678.2
-    export_test: 90.3
-    accuracy: 87.0
-  rtmpose_body2d:
-    job_submission: 1235.0
-    export_test: 96.6
-    accuracy: 165.3
-  salsanext:
-    job_submission: 535.2
-    export_test: 78.2
-    accuracy: 604.4
-  sam:
-    job_submission: 80.9
-    export_test: 16.5
-    accuracy: 14.3
-  sam2:
-    job_submission: 827.6
-    export_test: 128.3
-    accuracy: 63.3
-  segformer_base:
-    job_submission: 656.4
-    export_test: 118.4
-    accuracy: 616.0
-  sequencer2d:
-    job_submission: 1442.8
-    export_test: 98.8
-    accuracy: 68.2
-  sesr_m5:
-    job_submission: 386.9
-    export_test: 75.2
-    accuracy: 121.5
-  shufflenet_v2:
-    job_submission: 360.7
-    export_test: 76.4
-    accuracy: 80.8
-  simple_bev_cam:
-    job_submission: 198.8
-    export_test: 83.3
-    accuracy: 30.5
-  sinet:
-    job_submission: 588.6
-    export_test: 101.6
-    accuracy: 197.1
-  sixd_repnet:
-    job_submission: 261.9
-    export_test: 78.2
-    accuracy: 27.6
-  squeezenet1_1:
-    job_submission: 362.9
-    export_test: 77.5
-    accuracy: 81.4
-  stable_diffusion_v1_5:
-    job_submission: 2203.1
-    export_test: 2254.8
-    accuracy: 713.1
-  stable_diffusion_v2_1:
-    job_submission: 1929.2
-    export_test: 2665.8
-    accuracy: 969.2
-  statetransformer:
-    job_submission: 267.9
-    export_test: 76.9
-    accuracy: 24.5
-  stereonet:
-    job_submission: 389.8
-    export_test: 48.2
-    accuracy: 359.4
-  swin_base:
-    job_submission: 4899.6
-    export_test: 174.8
-    accuracy: 83.3
-  swin_small:
-    job_submission: 2960.1
-    export_test: 130.3
-    accuracy: 77.9
-  swin_tiny:
-    job_submission: 1786.1
+    job_submission: 656.9
     export_test: 104.0
-    accuracy: 76.7
-  swinv2_base:
-    job_submission: 5049.0
-    export_test: 181.4
-    accuracy: 85.5
-  track_anything:
-    job_submission: 443.3
-    export_test: 114.1
-    accuracy: 54.9
-  trocr:
-    job_submission: 324.6
-    export_test: 211.9
-    accuracy: 50.6
-  unet_segmentation:
-    job_submission: 1483.2
-    export_test: 120.6
-    accuracy: 296.3
-  video_mae:
-    job_submission: 2263.6
-    export_test: 345.0
-    accuracy: 211.7
-  vit:
-    job_submission: 13180.3
-    export_test: 307.4
-    accuracy: 124.3
-  whisper_base:
-    job_submission: 525.0
-    export_test: 492.1
-    accuracy: 42.7
-  whisper_large_v3_turbo:
-    job_submission: 1505.4
-    export_test: 2872.7
-    accuracy: 167.6
-  whisper_medium:
-    job_submission: 1416.3
-    export_test: 2264.1
-    accuracy: 191.0
-  whisper_small:
-    job_submission: 632.1
-    export_test: 998.0
-    accuracy: 71.6
-  whisper_small_quantized:
-    job_submission: 1546.8
-    export_test: 1186.2
-    accuracy: 327.0
-  whisper_tiny:
-    job_submission: 242.7
-    export_test: 370.3
-    accuracy: 29.3
-  wideresnet50:
-    job_submission: 799.3
-    export_test: 173.8
-    accuracy: 84.4
-  xlsr:
-    job_submission: 365.7
-    export_test: 75.2
-    accuracy: 108.0
-  yamnet:
-    job_submission: 564.9
-    export_test: 114.7
-    accuracy: 83.1
-  yolo26_det:
-    job_submission: 482.5
-    export_test: 70.8
-    accuracy: 226.4
-  yolo26_seg:
-    job_submission: 718.4
-    export_test: 71.8
-    accuracy: 485.2
-  yoloe_seg:
-    job_submission: 1005.6
-    export_test: 188.3
-    accuracy: 534.7
-  yolor:
-    job_submission: 608.0
-    export_test: 119.1
-    accuracy: 3311.4
-  yolov10_det:
-    job_submission: 707.3
-    export_test: 136.3
-    accuracy: 370.2
-  yolov11_det:
-    job_submission: 706.2
-    export_test: 141.1
-    accuracy: 445.7
-  yolov11_pose:
-    job_submission: 583.6
-    export_test: 98.2
-    accuracy: 299.0
-  yolov11_seg:
-    job_submission: 452.0
-    export_test: 71.7
-    accuracy: 484.4
-  yolov3:
-    job_submission: 338.3
-    export_test: 82.9
-    accuracy: 126.7
-  yolov5:
-    job_submission: 483.5
-    export_test: 100.9
-    accuracy: 124.9
-  yolov6:
-    job_submission: 565.5
-    export_test: 116.3
-    accuracy: 226.3
-  yolov7:
-    job_submission: 568.0
-    export_test: 119.9
-    accuracy: 212.6
-  yolov8_det:
-    job_submission: 722.3
-    export_test: 145.1
-    accuracy: 410.5
-  yolov8_obb:
-    job_submission: 629.9
-    export_test: 108.8
-    accuracy: 276.5
-  yolov8_seg:
-    job_submission: 471.6
-    export_test: 72.8
-    accuracy: 529.5
-  yolov9_det:
-    job_submission: 631.3
-    export_test: 112.0
-    accuracy: 432.1
-  yolox:
-    job_submission: 813.9
-    export_test: 157.7
-    accuracy: 342.1
-  zipformer:
-    job_submission: 4161.4
-    export_test: 584.3
+    accuracy: 113.9
+  depth_anything_v2:
+    job_submission: 520.4
+    export_test: 105.5
+    accuracy: 96.6
+  depth_anything_v3:
+    job_submission: 234.9
+    export_test: 69.1
+    accuracy: 81.9
+  detectron2_detection:
+    job_submission: 762.3
+    export_test: 190.6
+    accuracy: 90.9
+  detr_resnet101:
+    job_submission: 1259.5
+    export_test: 164.0
+    accuracy: 167.1
+  detr_resnet101_dc5:
+    job_submission: 528.7
+    export_test: 98.1
+    accuracy: 110.2
+  detr_resnet50:
+    job_submission: 902.2
+    export_test: 134.0
+    accuracy: 135.2
+  detr_resnet50_dc5:
+    job_submission: 1998.3
+    export_test: 132.1
+    accuracy: 142.5
+  distil_bert_base_uncased_hf:
+    job_submission: 1192.2
+    export_test: 196.2
     accuracy: 48.7
+  distil_whisper:
+    job_submission: 286.2
+    export_test: 559.3
+    accuracy: 64.3
+  dla102x:
+    job_submission: 678.2
+    export_test: 126.7
+    accuracy: 143.8
+  dncnn:
+    job_submission: 374.3
+    export_test: 85.7
+    accuracy: 53.8
+  easyocr:
+    job_submission: 610.1
+    export_test: 117.4
+    accuracy: 49.3
+  edgetam:
+    job_submission: 832.5
+    export_test: 122.6
+    accuracy: 77.7
+  efficientformer:
+    job_submission: 510.0
+    export_test: 100.8
+    accuracy: 80.6
+  efficientnet_b0:
+    job_submission: 340.6
+    export_test: 84.5
+    accuracy: 77.5
+  efficientnet_b4:
+    job_submission: 977.2
+    export_test: 102.1
+    accuracy: 183.4
+  efficientnet_v2_s:
+    job_submission: 758.0
+    export_test: 100.9
+    accuracy: 176.3
+  efficientvit_b2_cls:
+    job_submission: 721.4
+    export_test: 109.3
+    accuracy: 89.7
+  efficientvit_l2_cls:
+    job_submission: 1082.0
+    export_test: 152.5
+    accuracy: 91.3
+  efficientvit_l2_seg:
+    job_submission: 481.9
+    export_test: 75.0
+    accuracy: 161.3
+  electra_bert_base_discrim_google:
+    job_submission: 253.1
+    export_test: 144.8
+    accuracy: 36.4
+  esrgan:
+    job_submission: 867.1
+    export_test: 97.5
+    accuracy: 132.9
+  eyegaze:
+    job_submission: 387.9
+    export_test: 74.2
+    accuracy: 307.2
+  face_attrib_net:
+    job_submission: 353.9
+    export_test: 107.0
+    accuracy: 56.3
+  face_det_lite:
+    job_submission: 814.0
+    export_test: 146.3
+    accuracy: 476.2
+  facemap_3dmm:
+    job_submission: 355.8
+    export_test: 86.5
+    accuracy: 62.0
+  fastsam_s:
+    job_submission: 131.5
+    export_test: 56.4
+    accuracy: 16.4
+  fastsam_x:
+    job_submission: 181.4
+    export_test: 116.0
+    accuracy: 28.7
+  fcn_resnet50:
+    job_submission: 2499.6
+    export_test: 135.5
+    accuracy: 41.6
+  ffnet_122ns_lowres:
+    job_submission: 589.0
+    export_test: 131.1
+    accuracy: 202.6
+  ffnet_40s:
+    job_submission: 646.2
+    export_test: 101.8
+    accuracy: 211.8
+  ffnet_54s:
+    job_submission: 642.2
+    export_test: 115.7
+    accuracy: 311.0
+  ffnet_78s:
+    job_submission: 663.1
+    export_test: 125.2
+    accuracy: 264.3
+  ffnet_78s_lowres:
+    job_submission: 592.2
+    export_test: 131.5
+    accuracy: 188.3
+  fomm:
+    job_submission: 260.9
+    export_test: 92.8
+    accuracy: 55.7
+  foot_track_net:
+    job_submission: 1465.2
+    export_test: 119.1
+    accuracy: 177.2
+  gear_guard_net:
+    job_submission: 543.1
+    export_test: 138.3
+    accuracy: 108.7
+  gkt:
+    job_submission: 1590.2
+    export_test: 305.5
+    accuracy: 46.6
+  googlenet:
+    job_submission: 409.4
+    export_test: 93.5
+    accuracy: 83.9
+  gpunet:
+    job_submission: 546.3
+    export_test: 150.7
+    accuracy: 116.6
+  hrnet_face:
+    job_submission: 490.0
+    export_test: 99.0
+    accuracy: 125.7
+  hrnet_pose:
+    job_submission: 920.8
+    export_test: 173.1
+    accuracy: 250.8
+  hrnet_w48_ocr:
+    job_submission: 1568.6
+    export_test: 167.9
+    accuracy: 311.2
+  huggingface_wavlm_base_plus:
+    job_submission: 522.3
+    export_test: 135.4
+    accuracy: 72.0
+  inception_v3:
+    job_submission: 602.8
+    export_test: 115.1
+    accuracy: 137.8
+  internimage:
+    job_submission: 2844.9
+    export_test: 717.2
+    accuracy: 85.0
+  lama_dilated:
+    job_submission: 393.3
+    export_test: 108.6
+    accuracy: 332.4
+  levit:
+    job_submission: 1093.5
+    export_test: 128.7
+    accuracy: 104.6
+  litehrnet:
+    job_submission: 976.5
+    export_test: 43.1
+    accuracy: 78.0
+  llama_v3_2_1b_instruct:
+    job_submission: 986.4
+  llama_v3_2_3b_instruct:
+    job_submission: 2062.0
+  mask2former:
+    job_submission: 660.9
+    export_test: 354.9
+    accuracy: 140.1
+  maskrcnn:
+    job_submission: 198.2
+    export_test: 65.2
+    accuracy: 37.1
+  mediapipe_face:
+    job_submission: 437.6
+    export_test: 90.8
+    accuracy: 37.0
+  mediapipe_hand:
+    job_submission: 193.9
+    export_test: 61.0
+    accuracy: 22.8
+  mediapipe_hand_gesture:
+    job_submission: 738.3
+    export_test: 111.3
+    accuracy: 48.7
+  mediapipe_pose:
+    job_submission: 1057.3
+    export_test: 575.7
+    accuracy: 33.5
+  mediapipe_selfie:
+    job_submission: 453.6
+    export_test: 110.9
+    accuracy: 86.7
+  melotts_en:
+    job_submission: 1250.6
+    export_test: 483.7
+    accuracy: 97.6
+  melotts_es:
+    job_submission: 1528.7
+    export_test: 325.2
+    accuracy: 75.1
+  melotts_zh:
+    job_submission: 5367.6
+    export_test: 483.2
+    accuracy: 78.3
+  midas:
+    job_submission: 436.2
+    export_test: 124.7
+    accuracy: 89.9
+  minilm_v2:
+    job_submission: 370.9
+    export_test: 115.4
+    accuracy: 50.4
+  mnasnet05:
+    job_submission: 354.5
+    export_test: 73.6
+    accuracy: 72.5
+  mobile_bert_uncased_google:
+    job_submission: 886.8
+    export_test: 135.7
+    accuracy: 46.2
+  mobile_vit:
+    job_submission: 656.1
+    export_test: 80.0
+    accuracy: 104.2
+  mobilenet_v2:
+    job_submission: 667.9
+    export_test: 156.5
+    accuracy: 141.1
+  mobilenet_v3_large:
+    job_submission: 388.6
+    export_test: 81.9
+    accuracy: 85.9
+  mobilenet_v3_small:
+    job_submission: 298.3
+    export_test: 72.0
+    accuracy: 72.5
+  mobilesam:
+    job_submission: 187.6
+    export_test: 62.2
+    accuracy: 38.6
+  movenet:
+    job_submission: 370.7
+    export_test: 74.2
+    accuracy: 102.1
+  nafnet_deblur:
+    job_submission: 763.2
+    export_test: 159.3
+    accuracy: 113.0
+  nafnet_denoise:
+    job_submission: 539.9
+    export_test: 215.0
+    accuracy: 87.2
+  nafssr:
+    job_submission: 2157.7
+    export_test: 610.8
+    accuracy: 71.9
+  nasnet:
+    job_submission: 2511.1
+    export_test: 188.2
+    accuracy: 145.0
+  nomic_embed_text:
+    job_submission: 319.5
+    export_test: 178.4
+    accuracy: 376.9
+  openai_clip:
+    job_submission: 227.4
+    export_test: 402.0
+    accuracy: 27.0
+  opus_mt_en_es:
+    job_submission: 387.5
+    export_test: 845.5
+    accuracy: 26.1
+  opus_mt_en_zh:
+    job_submission: 1915.5
+    export_test: 747.7
+    accuracy: 26.1
+  opus_mt_es_en:
+    job_submission: 411.2
+    export_test: 836.2
+    accuracy: 52.9
+  opus_mt_zh_en:
+    job_submission: 400.3
+    export_test: 759.2
+    accuracy: 89.4
+  pi05:
+    job_submission: 6428.7
+    export_test: 4287.2
+    accuracy: 2266.8
+  pidnet:
+    job_submission: 561.2
+    export_test: 96.2
+    accuracy: 211.2
+  pipertts_de:
+    job_submission: 755.6
+    export_test: 345.7
+    accuracy: 60.4
+  pipertts_en:
+    job_submission: 675.8
+    export_test: 357.3
+    accuracy: 79.6
+  pipertts_it:
+    job_submission: 683.0
+    export_test: 359.4
+    accuracy: 78.3
+  pointnet:
+    job_submission: 130.7
+    export_test: 43.2
+    accuracy: 13.6
+  posenet_mobilenet:
+    job_submission: 744.9
+    export_test: 148.4
+    accuracy: 441.3
+  pspnet:
+    job_submission: 639.1
+    export_test: 190.5
+    accuracy: 517.1
+  quicksrnetlarge:
+    job_submission: 366.1
+    export_test: 79.3
+    accuracy: 182.5
+  quicksrnetmedium:
+    job_submission: 331.5
+    export_test: 76.6
+    accuracy: 111.6
+  quicksrnetsmall:
+    job_submission: 354.6
+    export_test: 81.5
+    accuracy: 173.1
+  qwen2_5_vl_7b_instruct:
+    job_submission: 7411.8
+  rangenet_plus_plus:
+    job_submission: 187.2
+    export_test: 99.0
+    accuracy: 48.5
+  real_esrgan_general_x4v3:
+    job_submission: 356.0
+    export_test: 88.9
+    accuracy: 190.7
+  real_esrgan_x4plus:
+    job_submission: 924.5
+    export_test: 115.8
+    accuracy: 133.8
+  regnet:
+    job_submission: 432.9
+    export_test: 111.2
+    accuracy: 90.6
+  regnet_y_800mf:
+    job_submission: 392.4
+    export_test: 87.6
+    accuracy: 96.6
+  resnet101:
+    job_submission: 573.4
+    export_test: 154.6
+    accuracy: 97.5
+  resnet18:
+    job_submission: 393.7
+    export_test: 109.7
+    accuracy: 94.6
+  resnet34_ssd1200:
+    job_submission: 1058.4
+    export_test: 60.6
+    accuracy: 141.8
+  resnet50:
+    job_submission: 463.4
+    export_test: 114.2
+    accuracy: 95.0
+  resnet_2plus1d:
+    job_submission: 1045.9
+    export_test: 140.0
+    accuracy: 131.5
+  resnet_3d:
+    job_submission: 942.5
+    export_test: 141.0
+    accuracy: 141.3
+  resnet_mixed:
+    job_submission: 469.4
+    export_test: 91.5
+    accuracy: 113.1
+  resnext101:
+    job_submission: 791.3
+    export_test: 201.7
+    accuracy: 88.9
+  resnext50:
+    job_submission: 480.4
+    export_test: 124.0
+    accuracy: 82.1
+  rf_detr:
+    job_submission: 487.9
+    export_test: 513.1
+    accuracy: 103.5
+  rtmdet:
+    job_submission: 673.2
+    export_test: 94.7
+    accuracy: 93.6
+  rtmpose_body2d:
+    job_submission: 733.6
+    export_test: 102.7
+    accuracy: 212.3
+  salsanext:
+    job_submission: 601.0
+    export_test: 84.1
+    accuracy: 586.7
+  sam:
+    job_submission: 101.4
+    export_test: 17.3
+    accuracy: 15.4
+  sam2:
+    job_submission: 839.3
+    export_test: 154.5
+    accuracy: 75.8
+  sam3:
+    job_submission: 1086.2
+    export_test: 2725.0
+    accuracy: 226.0
+  segformer_base:
+    job_submission: 682.4
+    export_test: 126.1
+    accuracy: 547.4
+  sequencer2d:
+    job_submission: 1259.9
+    export_test: 104.7
+    accuracy: 48.4
+  sesr_m5:
+    job_submission: 378.4
+    export_test: 83.3
+    accuracy: 156.2
+  shufflenet_v2:
+    job_submission: 392.2
+    export_test: 85.1
+    accuracy: 81.4
+  simple_bev_cam:
+    job_submission: 228.6
+    export_test: 71.5
+    accuracy: 88.9
+  sinet:
+    job_submission: 660.4
+    export_test: 116.8
+    accuracy: 217.1
+  sixd_repnet:
+    job_submission: 199.9
+    export_test: 89.9
+    accuracy: 27.4
+  squeezenet1_1:
+    job_submission: 352.4
+    export_test: 85.0
+    accuracy: 83.1
+  stable_diffusion_v1_5:
+    job_submission: 5709.9
+    export_test: 2631.9
+    accuracy: 633.5
+  stable_diffusion_v2_1:
+    job_submission: 4301.3
+    export_test: 3004.9
+    accuracy: 757.2
+  statetransformer:
+    job_submission: 183.8
+    export_test: 120.4
+    accuracy: 23.5
+  stereonet:
+    job_submission: 339.7
+    export_test: 53.5
+    accuracy: 364.4
+  swin_base:
+    job_submission: 4797.7
+    export_test: 189.7
+    accuracy: 82.4
+  swin_small:
+    job_submission: 2913.3
+    export_test: 152.8
+    accuracy: 94.5
+  swin_tiny:
+    job_submission: 1770.7
+    export_test: 119.9
+    accuracy: 80.2
+  swinv2_base:
+    job_submission: 4896.8
+    export_test: 190.9
+    accuracy: 85.8
+  track_anything:
+    job_submission: 383.8
+    export_test: 131.7
+    accuracy: 54.0
+  trocr:
+    job_submission: 255.7
+    export_test: 235.0
+    accuracy: 36.7
+  unet_segmentation:
+    job_submission: 1472.3
+    export_test: 132.1
+    accuracy: 428.6
+  video_mae:
+    job_submission: 2161.5
+    export_test: 363.2
+    accuracy: 232.9
+  vit:
+    job_submission: 13044.8
+    export_test: 323.1
+    accuracy: 127.6
+  whisper_base:
+    job_submission: 438.5
+    export_test: 517.9
+    accuracy: 37.6
+  whisper_large_v3_turbo:
+    job_submission: 1880.1
+    export_test: 3113.9
+    accuracy: 160.3
+  whisper_medium:
+    job_submission: 1849.9
+    export_test: 2640.2
+    accuracy: 180.4
+  whisper_small:
+    job_submission: 960.5
+    export_test: 1130.1
+    accuracy: 78.1
+  whisper_small_quantized:
+    job_submission: 1038.1
+    export_test: 1320.9
+    accuracy: 296.6
+  whisper_tiny:
+    job_submission: 346.3
+    export_test: 413.1
+    accuracy: 28.5
+  wideresnet50:
+    job_submission: 702.6
+    export_test: 184.6
+    accuracy: 87.9
+  xlsr:
+    job_submission: 394.2
+    export_test: 84.0
+    accuracy: 108.8
+  yamnet:
+    job_submission: 657.0
+    export_test: 135.0
+    accuracy: 82.2
+  yolo26_det:
+    job_submission: 556.0
+    export_test: 77.0
+    accuracy: 243.7
+  yolo26_pose:
+    job_submission: 525.8
+    export_test: 80.2
+    accuracy: 283.7
+  yolo26_seg:
+    job_submission: 788.9
+    export_test: 86.8
+    accuracy: 616.8
+  yoloe_seg:
+    job_submission: 1394.5
+    export_test: 216.1
+    accuracy: 666.5
+  yolor:
+    job_submission: 772.9
+    export_test: 138.6
+    accuracy: 3438.7
+  yolov10_det:
+    job_submission: 950.4
+    export_test: 151.3
+    accuracy: 394.1
+  yolov11_det:
+    job_submission: 1026.3
+    export_test: 166.2
+    accuracy: 461.6
+  yolov11_pose:
+    job_submission: 696.3
+    export_test: 108.8
+    accuracy: 310.2
+  yolov11_seg:
+    job_submission: 809.8
+    export_test: 85.4
+    accuracy: 488.3
+  yolov3:
+    job_submission: 539.9
+    export_test: 98.9
+    accuracy: 139.6
+  yolov5:
+    job_submission: 652.4
+    export_test: 106.7
+    accuracy: 168.0
+  yolov6:
+    job_submission: 685.0
+    export_test: 128.2
+    accuracy: 294.9
+  yolov7:
+    job_submission: 631.5
+    export_test: 129.7
+    accuracy: 335.0
+  yolov8_det:
+    job_submission: 825.5
+    export_test: 160.4
+    accuracy: 411.5
+  yolov8_obb:
+    job_submission: 726.7
+    export_test: 120.0
+    accuracy: 306.1
+  yolov8_seg:
+    job_submission: 538.8
+    export_test: 79.3
+    accuracy: 502.3
+  yolov9_det:
+    job_submission: 688.5
+    export_test: 123.4
+    accuracy: 368.3
+  yolox:
+    job_submission: 930.7
+    export_test: 170.7
+    accuracy: 347.6
+  zipformer:
+    job_submission: 3964.6
+    export_test: 626.4
+    accuracy: 45.4

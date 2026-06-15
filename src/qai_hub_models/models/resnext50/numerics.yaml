@@ -18,7 +18,7 @@ metrics:
         tflite:
           partial_metric: 80.5
         qnn_dlc:
-          partial_metric: 80.3
+          partial_metric: 80.4
         onnx:
           partial_metric: 80.4
       float:

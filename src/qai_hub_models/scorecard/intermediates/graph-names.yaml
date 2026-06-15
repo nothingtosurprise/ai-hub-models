@@ -1,3 +1,21 @@
+llama_v3_2_1b_instruct_part1_of_3:
+- prompt_ar128_cl4096_1_of_3
+- token_ar1_cl4096_1_of_3
+llama_v3_2_1b_instruct_part2_of_3:
+- prompt_ar128_cl4096_2_of_3
+- token_ar1_cl4096_2_of_3
+llama_v3_2_1b_instruct_part3_of_3:
+- prompt_ar128_cl4096_3_of_3
+- token_ar1_cl4096_3_of_3
+llama_v3_2_3b_instruct_part1_of_3:
+- prompt_ar128_cl4096_1_of_3
+- token_ar1_cl4096_1_of_3
+llama_v3_2_3b_instruct_part2_of_3:
+- prompt_ar128_cl4096_2_of_3
+- token_ar1_cl4096_2_of_3
+llama_v3_2_3b_instruct_part3_of_3:
+- prompt_ar128_cl4096_3_of_3
+- token_ar1_cl4096_3_of_3
 qwen2_5_vl_7b_instruct_part1_of_5:
 - ar128_cl512_1_of_5
 - ar128_cl1024_1_of_5
@@ -33,12 +51,3 @@ qwen2_5_vl_7b_instruct_part5_of_5:
 - ar1_cl512_5_of_5
 - ar1_cl1024_5_of_5
 - ar1_cl2048_5_of_5
-llama_v3_2_1b_instruct_part1_of_3:
-- prompt_ar128_cl4096_1_of_3
-- token_ar1_cl4096_1_of_3
-llama_v3_2_1b_instruct_part2_of_3:
-- prompt_ar128_cl4096_2_of_3
-- token_ar1_cl4096_2_of_3
-llama_v3_2_1b_instruct_part3_of_3:
-- prompt_ar128_cl4096_3_of_3
-- token_ar1_cl4096_3_of_3

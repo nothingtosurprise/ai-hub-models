@@ -1,0 +1,65 @@
+precisions:
+  w4a16:
+    chipset_assets:
+      qualcomm-qcs9075:
+        genie:
+          s3_key: pre_release_assets/gh_actions/27460081135/llama_v3_2_3b_instruct-genie-w4a16-qualcomm_qcs9075.zip
+          tool_versions:
+            qairt: 2.45.0.260326154327
+      qualcomm-sa8775p:
+        genie:
+          s3_key: pre_release_assets/gh_actions/27460081135/llama_v3_2_3b_instruct-genie-w4a16-qualcomm_sa8775p.zip
+          tool_versions:
+            qairt: 2.45.0.260326154327
+      qualcomm-snapdragon-8-elite-for-galaxy:
+        genie:
+          s3_key: pre_release_assets/gh_actions/27460081135/llama_v3_2_3b_instruct-genie-w4a16-qualcomm_snapdragon_8_elite_for_galaxy.zip
+          tool_versions:
+            qairt: 2.45.0.260326154327
+      qualcomm-snapdragon-8-elite-gen5-for-galaxy:
+        genie:
+          s3_key: pre_release_assets/gh_actions/27460081135/llama_v3_2_3b_instruct-genie-w4a16-qualcomm_snapdragon_8_elite_gen5_for_galaxy.zip
+          tool_versions:
+            qairt: 2.45.0.260326154327
+      qualcomm-snapdragon-x-elite:
+        genie:
+          s3_key: pre_release_assets/gh_actions/27460081135/llama_v3_2_3b_instruct-genie-w4a16-qualcomm_snapdragon_x_elite.zip
+          tool_versions:
+            qairt: 2.45.0.260326154327
+      qualcomm-snapdragon-x2-elite:
+        genie:
+          s3_key: pre_release_assets/gh_actions/27460081135/llama_v3_2_3b_instruct-genie-w4a16-qualcomm_snapdragon_x2_elite.zip
+          tool_versions:
+            qairt: 2.45.0.260326154327
+  w4:
+    chipset_assets:
+      qualcomm-qcs9075:
+        genie:
+          s3_key: pre_release_assets/gh_actions/27460081135/llama_v3_2_3b_instruct-genie-w4-qualcomm_qcs9075.zip
+          tool_versions:
+            qairt: 2.45.0.260326154327
+      qualcomm-sa8775p:
+        genie:
+          s3_key: pre_release_assets/gh_actions/27460081135/llama_v3_2_3b_instruct-genie-w4-qualcomm_sa8775p.zip
+          tool_versions:
+            qairt: 2.45.0.260326154327
+      qualcomm-snapdragon-8-elite-for-galaxy:
+        genie:
+          s3_key: pre_release_assets/gh_actions/27460081135/llama_v3_2_3b_instruct-genie-w4-qualcomm_snapdragon_8_elite_for_galaxy.zip
+          tool_versions:
+            qairt: 2.45.0.260326154327
+      qualcomm-snapdragon-8-elite-gen5-for-galaxy:
+        genie:
+          s3_key: pre_release_assets/gh_actions/27460081135/llama_v3_2_3b_instruct-genie-w4-qualcomm_snapdragon_8_elite_gen5_for_galaxy.zip
+          tool_versions:
+            qairt: 2.45.0.260326154327
+      qualcomm-snapdragon-x-elite:
+        genie:
+          s3_key: pre_release_assets/gh_actions/27460081135/llama_v3_2_3b_instruct-genie-w4-qualcomm_snapdragon_x_elite.zip
+          tool_versions:
+            qairt: 2.45.0.260326154327
+      qualcomm-snapdragon-x2-elite:
+        genie:
+          s3_key: pre_release_assets/gh_actions/27460081135/llama_v3_2_3b_instruct-genie-w4-qualcomm_snapdragon_x2_elite.zip
+          tool_versions:
+            qairt: 2.45.0.260326154327

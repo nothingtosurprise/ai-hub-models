@@ -6,7 +6,7 @@ has_on_target_demo: true
 disabled_paths:
   float:
     tflite:
-      scorecard_failure: 'Failing jobs: jgomne4d5'
+      scorecard_failure: 'Failing jobs: jpe2q1r7p'
 is_collection_model: true
 global_requirements_incompatible: true
 pip_pre_build_reqs: '"torch>=2.1,<2.12.0" "setuptools>=80"'

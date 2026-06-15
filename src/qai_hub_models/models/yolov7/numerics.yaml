@@ -18,13 +18,6 @@ metrics:
           partial_metric: 39.3
         onnx:
           partial_metric: 39.3
-      w8a8:
-        tflite:
-          partial_metric: 35.8
-        qnn_dlc:
-          partial_metric: 35.8
-        onnx:
-          partial_metric: 35.8
       float:
         tflite:
           partial_metric: 39.6
@@ -32,3 +25,10 @@ metrics:
           partial_metric: 39.6
         onnx:
           partial_metric: 39.6
+      w8a8:
+        tflite:
+          partial_metric: 35.8
+        qnn_dlc:
+          partial_metric: 35.8
+        onnx:
+          partial_metric: 35.8

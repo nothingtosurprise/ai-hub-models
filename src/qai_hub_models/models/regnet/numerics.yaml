@@ -23,8 +23,8 @@ metrics:
           partial_metric: 77.6
       w8a8:
         tflite:
-          partial_metric: 78.0
-        qnn_dlc:
           partial_metric: 77.9
+        qnn_dlc:
+          partial_metric: 77.3
         onnx:
           partial_metric: 77.3

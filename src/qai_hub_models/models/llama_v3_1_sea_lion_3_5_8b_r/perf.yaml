@@ -4,10 +4,10 @@ supported_devices:
 - Snapdragon X2 Elite CRD
 - Snapdragon 8 Elite Gen 5 QRD
 - Snapdragon 8 Elite QRD
-- Dragonwing Q-8750
 - Samsung Galaxy S25
 - Samsung Galaxy S25 Ultra
 - Samsung Galaxy S25+
+- Dragonwing Q-8750
 supported_chipsets:
 - qualcomm-snapdragon-8-elite
 - qualcomm-snapdragon-x-elite

@@ -5,9 +5,9 @@ external_repos:
     patches_filename: simple_bev_patches.diff
 disabled_paths:
   float:
-    tflite:
-      scorecard_failure: 'Failing jobs: jp0klvr05'
     qnn_dlc:
-      scorecard_failure: 'Failing jobs: jgj1ewl1g'
+      scorecard_failure: 'Failing jobs: jgkdjrewp'
     onnx:
-      scorecard_failure: 'Failing jobs: jp48v9wqg'
+      scorecard_failure: 'Failing jobs: jgl7je4j5'
+    tflite:
+      scorecard_failure: 'Failing jobs: jpe2j4m1p'

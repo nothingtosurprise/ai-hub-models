@@ -1,6 +1,3 @@
-> [!WARNING]
-> This model is not published. Use with caution; it may not meet performance/accuracy standards and may not support some runtimes or chipsets/devices. We do not provide support for unpublished models. If this model was previously published, use earlier releases.
-
 # [CenterNet-3D: Construct a bird’s eye view from sensors mounted on a vehicle](https://aihub.qualcomm.com/models/centernet_3d)
 
 CenterNet is a machine learning model for generating a birds eye view represenation from the sensors(cameras) mounted on a vehicle.

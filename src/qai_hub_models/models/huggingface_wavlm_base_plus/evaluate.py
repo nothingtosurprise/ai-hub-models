@@ -16,6 +16,7 @@ from qai_hub_models.models.huggingface_wavlm_base_plus import MODEL_ID, Model
 from qai_hub_models.models.huggingface_wavlm_base_plus.export import export_model
 from qai_hub_models.models.protocols import ExecutableModelProtocol
 from qai_hub_models.utils.args import evaluate_parser, get_model_kwargs
+from qai_hub_models.utils.asset_loaders import UNPUBLISHED_MODEL_WARNING, query_yes_no
 from qai_hub_models.utils.evaluate import evaluate_on_dataset
 from qai_hub_models.utils.inference import AsyncOnDeviceModel, compile_model_from_args
 from qai_hub_models.utils.input_spec import InputSpec
@@ -24,16 +25,11 @@ from qai_hub_models.utils.kwarg_helpers import filter_kwargs
 
 def main() -> None:
     warnings.filterwarnings("ignore")
+    print("WARNING:", UNPUBLISHED_MODEL_WARNING)
+    if not query_yes_no("Continue?"):
+        return
     eval_dataset_classes = Model.get_eval_dataset_classes()
-    supported_precision_runtimes: dict[Precision, list[TargetRuntime]] = {
-        Precision.float: [
-            TargetRuntime.TFLITE,
-            TargetRuntime.QNN_DLC,
-            TargetRuntime.QNN_CONTEXT_BINARY,
-            TargetRuntime.ONNX,
-            TargetRuntime.PRECOMPILED_QNN_ONNX,
-        ],
-    }
+    supported_precision_runtimes: dict[Precision, list[TargetRuntime]] = {}
 
     parser = evaluate_parser(
         model_cls=Model,

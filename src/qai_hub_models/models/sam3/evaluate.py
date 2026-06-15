@@ -28,7 +28,12 @@ def main() -> None:
     if not query_yes_no("Continue?"):
         return
     eval_dataset_classes = Model.get_eval_dataset_classes()
-    supported_precision_runtimes: dict[Precision, list[TargetRuntime]] = {}
+    supported_precision_runtimes: dict[Precision, list[TargetRuntime]] = {
+        Precision.float: [
+            TargetRuntime.QNN_CONTEXT_BINARY,
+            TargetRuntime.PRECOMPILED_QNN_ONNX,
+        ],
+    }
 
     parser = evaluate_parser(
         model_cls=Model,

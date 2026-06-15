@@ -1,6 +1,6 @@
 name: HuggingFace-WavLM-Base-Plus
 id: huggingface_wavlm_base_plus
-status: published
+status: pending
 headline: Real-time Speech processing.
 domain: Audio
 description: HuggingFaceWavLMBasePlus is a real time speech processing backbone based on Microsoft's WavLM model.
@@ -37,3 +37,4 @@ numerics_benchmark:
   value: 6.83
   unit: WER
   source: https://huggingface.co/patrickvonplaten/wavlm-libri-clean-100h-base-plus
+status_reason: model does not support at least one export path

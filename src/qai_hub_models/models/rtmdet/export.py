@@ -529,6 +529,9 @@ def main() -> None:
             TargetRuntime.TFLITE,
             TargetRuntime.ONNX,
         ],
+        Precision.w8a16: [
+            TargetRuntime.ONNX,
+        ],
     }
 
     parser = export_parser(

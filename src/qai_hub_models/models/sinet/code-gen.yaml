@@ -9,6 +9,11 @@ supported_precisions:
 - w8a8
 has_on_target_demo: true
 disabled_paths:
+  w8a16:
+    onnx:
+      scorecard_accuracy_failure: Torch and On-device accuracy diff (-74.800 mIOU) above threshold (10.0 mIOU)
   w8a8:
+    onnx:
+      scorecard_accuracy_failure: Torch and On-device accuracy diff (-74.800 mIOU) above threshold (10.0 mIOU)
     tflite:
       scorecard_accuracy_failure: Torch and On-device accuracy diff (-74.800 mIOU) above threshold (10.0 mIOU)

@@ -1,8 +1,8 @@
 has_on_target_demo: true
 disabled_paths:
   float:
-    tflite:
-      scorecard_failure: 'Failing jobs: jp0k3yze5'
     onnx:
-      scorecard_failure: 'Failing jobs: j56vz6y0p'
+      scorecard_failure: 'Failing jobs: j5wxkodjp'
+    tflite:
+      scorecard_failure: 'Failing jobs: jp0kw1z95'
 is_collection_model: true

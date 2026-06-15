@@ -3,10 +3,10 @@ supported_devices:
 - Dragonwing IQ-X7181
 - Snapdragon X2 Elite CRD
 - Snapdragon 8 Elite QRD
-- Dragonwing Q-8750
 - Samsung Galaxy S25
 - Samsung Galaxy S25 Ultra
 - Samsung Galaxy S25+
+- Dragonwing Q-8750
 - Snapdragon 8 Elite Gen 5 QRD
 - Dragonwing IQ-9075 EVK
 supported_chipsets:

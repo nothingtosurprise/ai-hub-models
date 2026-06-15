@@ -9,9 +9,11 @@ supported_precisions:
 disabled_paths:
   mixed:
     qnn_context_binary:
-      scorecard_failure: 'Failing jobs: j5qwe8wn5'
+      scorecard_failure: 'Failing jobs: jpr9rnv9p'
+    qnn_dlc:
+      scorecard_failure: 'Failing jobs: j56vx7y7p'
     precompiled_qnn_onnx:
-      scorecard_failure: 'Failing jobs: jgomm6kx5'
+      scorecard_failure: 'Failing jobs: j576md4qg'
 is_collection_model: true
 requires_aot_prepare: true
 global_requirements_incompatible: true

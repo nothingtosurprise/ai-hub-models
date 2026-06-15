@@ -1,3 +1,4 @@
 has_on_target_demo: true
+disabled_paths: {}
 is_collection_model: true
 inference_on_8gen3: true

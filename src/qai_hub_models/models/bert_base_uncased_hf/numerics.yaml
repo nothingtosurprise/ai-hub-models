@@ -1,5 +1,5 @@
 metrics:
-- dataset_name: wikitext_masked
+- dataset_name: wikitext_masked_google_bert_bert_base_uncased
   dataset_link: https://huggingface.co/datasets/wikitext
   dataset_split_description: wikitext-2-raw-v1 validation split
   metric_name: Top-1 Accuracy
@@ -10,18 +10,16 @@ metrics:
     max: 100.0
   metric_enablement_threshold: 10.0
   num_partial_samples: 250
-  partial_torch_metric: 0.0
+  partial_torch_metric: 74.4
   device_metric:
     Samsung Galaxy S25:
-      w8a16:
-        qnn_dlc:
-          partial_metric: 0.0
-        onnx:
-          partial_metric: 0.0
       float:
         tflite:
-          partial_metric: 0.0
+          partial_metric: 74.4
         qnn_dlc:
-          partial_metric: 0.0
+          partial_metric: 74.4
+      w8a16:
+        qnn_dlc:
+          partial_metric: 74.4
         onnx:
-          partial_metric: 0.0
+          partial_metric: 74.0

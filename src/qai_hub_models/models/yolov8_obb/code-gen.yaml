@@ -6,6 +6,6 @@ has_on_target_demo: true
 disabled_paths:
   w8a8:
     tflite:
-      scorecard_failure: 'Failing jobs: j5m46k0y5'
+      scorecard_failure: 'Failing jobs: jp0knd395'
 outputs_to_skip_validation:
   '2': Boxes with low confidence disagree on class index between torch and on-device

@@ -13,6 +13,11 @@ metrics:
   partial_torch_metric: 31.1
   device_metric:
     Samsung Galaxy S25:
+      w8a16:
+        qnn_dlc:
+          partial_metric: 30.5
+        onnx:
+          partial_metric: 30.5
       float:
         tflite:
           partial_metric: 30.5
@@ -20,8 +25,3 @@ metrics:
           partial_metric: 30.5
         onnx:
           partial_metric: 30.4
-      w8a16:
-        qnn_dlc:
-          partial_metric: 30.5
-        onnx:
-          partial_metric: 30.5

@@ -16,3 +16,5 @@ metrics:
       float:
         qnn_context_binary:
           partial_metric: 0.419
+        precompiled_qnn_onnx:
+          partial_metric: 0.419

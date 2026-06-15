@@ -1,10 +1,10 @@
 supported_devices:
 - Snapdragon 8 Elite Gen 5 QRD
 - Snapdragon 8 Elite QRD
-- Dragonwing Q-8750
 - Samsung Galaxy S25
 - Samsung Galaxy S25 Ultra
 - Samsung Galaxy S25+
+- Dragonwing Q-8750
 - Snapdragon X2 Elite CRD
 - Snapdragon X Elite CRD
 - Dragonwing IQ-X7181
@@ -38,18 +38,20 @@ precisions:
             genie:
               llm_metrics:
               - context_length: 4096
-                tokens_per_second: 16.657778549194337
+                tokens_per_second: 12.129151344299316
                 time_to_first_token_range_milliseconds:
-                  min: 119.9063
-                  max: 3837.0016
+                  min: 118.303
+                  max: 3785.696
+                prefill_tokens_per_second: 473.48486328125
           Snapdragon X2 Elite CRD:
             genie:
               llm_metrics:
               - context_length: 4096
-                tokens_per_second: 41.82037925720215
+                tokens_per_second: 42.45383071899414
                 time_to_first_token_range_milliseconds:
-                  min: 78.3631
-                  max: 2507.6192
+                  min: 85.31
+                  max: 2729.92
+                prefill_tokens_per_second: 656.5988159179688
           SA8775P ADP:
             genie:
               llm_metrics:
@@ -62,18 +64,20 @@ precisions:
             genie:
               llm_metrics:
               - context_length: 4096
-                tokens_per_second: 17.58785104751587
+                tokens_per_second: 18.14849090576172
                 time_to_first_token_range_milliseconds:
-                  min: 108.3801
-                  max: 3468.1632
+                  min: 104.04
+                  max: 3329.28
+                prefill_tokens_per_second: 538.5029907226562
           Snapdragon 8 Elite QRD:
             genie:
               llm_metrics:
               - context_length: 4096
-                tokens_per_second: 28.099240112304688
+                tokens_per_second: 28.378454208374023
                 time_to_first_token_range_milliseconds:
-                  min: 82.1426
-                  max: 2628.5632
+                  min: 84.778
+                  max: 2712.896
+                prefill_tokens_per_second: 660.9385375976562
           SA8255P ADP:
             genie:
               llm_metrics:

@@ -7,4 +7,4 @@ has_on_target_demo: true
 disabled_paths:
   float:
     onnx:
-      scorecard_failure: 'Failing jobs: j5qw3v4m5'
+      scorecard_failure: 'Failing jobs: jgj19r91g'

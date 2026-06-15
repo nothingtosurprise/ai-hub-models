@@ -3,10 +3,10 @@ supported_devices:
 - Dragonwing IQ-X7181
 - Snapdragon X2 Elite CRD
 - Snapdragon 8 Elite QRD
-- Dragonwing Q-8750
 - Samsung Galaxy S25
 - Samsung Galaxy S25 Ultra
 - Samsung Galaxy S25+
+- Dragonwing Q-8750
 - Snapdragon 8 Elite Gen 5 QRD
 - Dragonwing IQ-9075 EVK
 supported_chipsets:
@@ -24,26 +24,29 @@ precisions:
             genie:
               llm_metrics:
               - context_length: 2048
-                tokens_per_second: 6.205299758911133
+                tokens_per_second: 4.930407524108887
                 time_to_first_token_range_milliseconds:
-                  min: 172.9066
-                  max: 2766.5056
+                  min: 162.986
+                  max: 2607.776
+                prefill_tokens_per_second: 190.22256469726562
           Snapdragon X2 Elite CRD:
             genie:
               llm_metrics:
               - context_length: 2048
-                tokens_per_second: 20.206287384033203
+                tokens_per_second: 23.43951416015625
                 time_to_first_token_range_milliseconds:
-                  min: 76.6874
-                  max: 1226.9984
+                  min: 75.6
+                  max: 1209.6
+                prefill_tokens_per_second: 410.1722717285156
           Snapdragon 8 Elite QRD:
             genie:
               llm_metrics:
               - context_length: 2048
-                tokens_per_second: 14.676631736755372
+                tokens_per_second: 15.609390258789062
                 time_to_first_token_range_milliseconds:
-                  min: 100.7981
-                  max: 1612.7696
+                  min: 100.003
+                  max: 1600.048
+                prefill_tokens_per_second: 310.0775146484375
           Snapdragon 8 Elite Gen 5 QRD:
             genie:
               llm_metrics:
@@ -56,10 +59,11 @@ precisions:
             genie:
               llm_metrics:
               - context_length: 2048
-                tokens_per_second: 10.665089321136474
+                tokens_per_second: 10.637053489685059
                 time_to_first_token_range_milliseconds:
-                  min: 137.96370000000002
-                  max: 2207.4192000000003
+                  min: 138.498
+                  max: 2215.968
+                prefill_tokens_per_second: 223.8638916015625
           Dragonwing Q-8750:
             genie:
               llm_metrics:

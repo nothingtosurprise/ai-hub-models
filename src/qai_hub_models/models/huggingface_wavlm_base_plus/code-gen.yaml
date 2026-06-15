@@ -1,4 +1,21 @@
 has_on_target_demo: true
+disabled_paths:
+  float:
+    tflite:
+      scorecard_failure: 'Failing jobs: jp2j12e45'
+      scorecard_accuracy_failure: 'Torch accuracy (20.7 WER) deviates from benchmark (6.83 WER) by 13.870 WER, threshold: 10.0 WER'
+    qnn_dlc:
+      scorecard_accuracy_failure: 'Torch accuracy (20.7 WER) deviates from benchmark (6.83 WER) by 13.870 WER, threshold: 10.0 WER'
+    qnn_context_binary:
+      scorecard_accuracy_failure: 'Torch accuracy (20.7 WER) deviates from benchmark (6.83 WER) by 13.870 WER, threshold: 10.0 WER'
+    onnx:
+      scorecard_accuracy_failure: 'Torch accuracy (20.7 WER) deviates from benchmark (6.83 WER) by 13.870 WER, threshold: 10.0 WER'
+    precompiled_qnn_onnx:
+      scorecard_accuracy_failure: 'Torch accuracy (20.7 WER) deviates from benchmark (6.83 WER) by 13.870 WER, threshold: 10.0 WER'
+    genie:
+      scorecard_accuracy_failure: 'Torch accuracy (20.7 WER) deviates from benchmark (6.83 WER) by 13.870 WER, threshold: 10.0 WER'
+    voice_ai:
+      scorecard_accuracy_failure: 'Torch accuracy (20.7 WER) deviates from benchmark (6.83 WER) by 13.870 WER, threshold: 10.0 WER'
 global_requirements_incompatible: true
 readme_install_system_deps: |
   #### Linux

@@ -21,4 +21,6 @@ metrics:
           partial_metric: 81.1
       w8a8:
         qnn_context_binary:
-          partial_metric: 81.5
+          partial_metric: 81.2
+        precompiled_qnn_onnx:
+          partial_metric: 81.2

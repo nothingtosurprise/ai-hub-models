@@ -83,6 +83,7 @@ ENABLED_PRECISION_RUNTIMES: dict[Precision, list[TargetRuntime]] = {
 PASSING_PRECISION_RUNTIMES: dict[Precision, list[TargetRuntime]] = {
     Precision.float: [
         TargetRuntime.QNN_CONTEXT_BINARY,
+        TargetRuntime.PRECOMPILED_QNN_ONNX,
     ],
 }
 

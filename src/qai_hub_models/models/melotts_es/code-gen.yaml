@@ -1,5 +1,6 @@
 supported_precisions:
 - mixed_with_float
+disabled_paths: {}
 is_collection_model: true
 requires_aot_prepare: true
 orchestrator_runtimes:

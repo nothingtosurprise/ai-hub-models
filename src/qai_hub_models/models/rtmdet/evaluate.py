@@ -30,6 +30,9 @@ def main() -> None:
             TargetRuntime.TFLITE,
             TargetRuntime.ONNX,
         ],
+        Precision.w8a16: [
+            TargetRuntime.ONNX,
+        ],
     }
 
     parser = evaluate_parser(

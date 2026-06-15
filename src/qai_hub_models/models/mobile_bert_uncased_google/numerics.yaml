@@ -1,5 +1,5 @@
 metrics:
-- dataset_name: wikitext_masked
+- dataset_name: wikitext_masked_google_mobilebert_uncased
   dataset_link: https://huggingface.co/datasets/wikitext
   dataset_split_description: wikitext-2-raw-v1 validation split
   metric_name: Top-1 Accuracy

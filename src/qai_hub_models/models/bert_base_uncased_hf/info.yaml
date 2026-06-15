@@ -1,7 +1,6 @@
 name: Bert-Base-Uncased-Hf
 id: bert_base_uncased_hf
-status: pending
-status_reason: No successful runtimes in scorecard (this field was auto-populated by the scorecard run)
+status: published
 headline: Language model for masked language modeling and general-purpose NLP tasks.
 domain: Generative AI
 description: Bert is a lightweight BERT model designed for efficient self-supervised learning of language representations. It can be used for masked language modeling and as a backbone for various NLP tasks.

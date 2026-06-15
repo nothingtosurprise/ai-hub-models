@@ -3,9 +3,9 @@ disabled_paths:
   float:
     qnn_dlc:
       scorecard_failure: Some expected profile jobs were missing.
-    tflite:
-      scorecard_failure: Some expected profile jobs were missing.
     onnx:
+      scorecard_failure: Some expected profile jobs were missing.
+    tflite:
       scorecard_failure: Some expected profile jobs were missing.
 is_collection_model: true
 global_requirements_incompatible: true

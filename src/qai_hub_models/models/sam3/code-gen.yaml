@@ -1,10 +1,8 @@
 has_on_target_demo: true
 disabled_paths:
   float:
-    qnn_context_binary:
-      scorecard_failure: Some expected profile jobs were missing.
-    precompiled_qnn_onnx:
-      scorecard_failure: Some expected profile jobs were missing.
+    qnn_dlc:
+      scorecard_failure: 'Failing jobs: j5wxk4w6p'
 is_collection_model: true
 requires_aot_prepare: true
 global_requirements_incompatible: true

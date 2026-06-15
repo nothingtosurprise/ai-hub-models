@@ -7,5 +7,7 @@ disabled_paths:
     onnx:
       scorecard_accuracy_failure: Torch and On-device accuracy diff (-54.800 %) above threshold (10.0 %)
   w8a16:
+    onnx:
+      scorecard_accuracy_failure: Torch and On-device accuracy diff (-58.000 %) above threshold (10.0 %)
     qnn_dlc:
       scorecard_accuracy_failure: Torch and On-device accuracy diff (-58.000 %) above threshold (10.0 %)

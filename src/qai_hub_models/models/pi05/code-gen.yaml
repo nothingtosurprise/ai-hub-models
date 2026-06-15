@@ -1,6 +1,7 @@
 is_aimet: true
 supported_precisions:
 - mixed
+disabled_paths: {}
 default_device: Dragonwing IQ-9075 EVK
 is_collection_model: true
 requires_aot_prepare: true

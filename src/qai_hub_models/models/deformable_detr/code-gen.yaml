@@ -3,15 +3,15 @@ supported_precisions:
 - w8a16
 has_on_target_demo: true
 disabled_paths:
+  float:
+    qnn_dlc:
+      scorecard_failure: 'Failing jobs: jp139k2k5'
+    onnx:
+      scorecard_failure: 'Failing jobs: jpynlkj4g'
+    tflite:
+      scorecard_failure: 'Failing jobs: jgj196v7g'
   w8a16:
     qnn_dlc:
-      scorecard_failure: 'Failing jobs: jg98wzrlp'
+      scorecard_failure: 'Failing jobs: jpynlk64g'
     onnx:
-      scorecard_failure: 'Failing jobs: jgd0odjep'
-  float:
-    tflite:
-      scorecard_failure: 'Failing jobs: jgj1erjxg'
-    qnn_dlc:
-      scorecard_failure: 'Failing jobs: j56vn860p'
-    onnx:
-      scorecard_failure: 'Failing jobs: jgkd32nwp'
+      scorecard_failure: 'Failing jobs: jgomx7vd5'

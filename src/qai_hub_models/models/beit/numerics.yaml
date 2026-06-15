@@ -25,4 +25,4 @@ metrics:
         qnn_dlc:
           partial_metric: 83.0
         onnx:
-          partial_metric: 83.4
+          partial_metric: 83.5
