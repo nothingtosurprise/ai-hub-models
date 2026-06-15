@@ -22,7 +22,7 @@ if __name__ == "__main__":
         quantized_model_cls=Llama3_2_3B_QuantizablePreSplit
         if use_presplit
         else QuantizedSplitModelWrapper,
-        fp_model_cls=FPSplitModelWrapper if use_presplit else Llama3_2_3B_PreSplit,
+        fp_model_cls=Llama3_2_3B_PreSplit if use_presplit else FPSplitModelWrapper,
         qnn_model_cls=LLM_QNN,
         supported_precisions=SUPPORTED_PRECISIONS,
     )
