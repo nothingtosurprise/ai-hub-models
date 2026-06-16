@@ -15,7 +15,10 @@ from transformers.modeling_outputs import CausalLMOutputWithPast
 
 from qai_hub_models.evaluators.kldiv_evaluator import KLDivEvaluator
 from qai_hub_models.evaluators.llm_evaluator import LLMEvaluator
-from qai_hub_models.evaluators.metrics import MMLU, MetricMetadata
+from qai_hub_models.utils.metrics import (
+    MMLU,
+    MetricMetadata,
+)
 
 
 class MMLUEvaluator(LLMEvaluator):

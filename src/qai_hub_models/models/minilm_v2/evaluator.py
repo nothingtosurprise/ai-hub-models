@@ -11,8 +11,11 @@ import torch
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
-from qai_hub_models.evaluators.metrics import ACCURACY_TOP1, MetricMetadata
 from qai_hub_models.utils.base_evaluator import BaseEvaluator
+from qai_hub_models.utils.metrics import (
+    ACCURACY_TOP1,
+    MetricMetadata,
+)
 
 
 class SentenceEmbeddingEvaluator(BaseEvaluator):

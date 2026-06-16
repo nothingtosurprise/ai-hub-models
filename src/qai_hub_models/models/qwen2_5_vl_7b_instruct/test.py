@@ -14,6 +14,10 @@ import torch
 from qai_hub_models import Precision
 from qai_hub_models.models._shared.llm import test
 from qai_hub_models.models._shared.llm.evaluate import evaluate
+from qai_hub_models.models._shared.llm.llm_helpers import (
+    log_evaluate_test_result,
+    log_perf_on_device_result,
+)
 from qai_hub_models.models._shared.llm.model import (
     DEFAULT_CONTEXT_LENGTH,
     LLM_QNN,
@@ -35,10 +39,6 @@ from qai_hub_models.models.qwen2_5_vl_7b_instruct.model import (
 )
 from qai_hub_models.scorecard import ScorecardDevice
 from qai_hub_models.scorecard.device import cs_8_elite_gen_5
-from qai_hub_models.utils.llm_helpers import (
-    log_evaluate_test_result,
-    log_perf_on_device_result,
-)
 
 DEFAULT_EVAL_SEQLEN = 2048
 

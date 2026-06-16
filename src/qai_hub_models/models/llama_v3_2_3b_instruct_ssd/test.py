@@ -20,6 +20,11 @@ from qai_hub_models.models._shared.llm import test
 from qai_hub_models.models._shared.llm.common import cleanup
 from qai_hub_models.models._shared.llm.evaluate import evaluate
 from qai_hub_models.models._shared.llm.export import export_model
+from qai_hub_models.models._shared.llm.llm_helpers import (
+    create_genie_config,
+    log_evaluate_test_result,
+    log_perf_on_device_result,
+)
 from qai_hub_models.models._shared.llm.model import DEFAULT_CONTEXT_LENGTH
 from qai_hub_models.models._shared.llm.perf_collection import (
     LLMPerfConfig,
@@ -53,11 +58,6 @@ from qai_hub_models.scorecard import (
 from qai_hub_models.scorecard.device import cs_8_elite_qrd
 from qai_hub_models.scorecard.utils.testing_export_eval import run_llm_compile
 from qai_hub_models.utils.asset_loaders import ASSET_CONFIG
-from qai_hub_models.utils.llm_helpers import (
-    create_genie_config,
-    log_evaluate_test_result,
-    log_perf_on_device_result,
-)
 from qai_hub_models.utils.model_cache import CacheMode
 
 DEFAULT_EVAL_SEQLEN = 2048
@@ -385,7 +385,7 @@ def test_qdc(
     )
     if not (genie_bundle_path / "genie_config.json").exists():
         pytest.fail("The genie bundle does not exist.")
-    from qai_hub_models.utils.qdc.genie_jobs import (
+    from qai_hub_models.models._shared.llm.qdc.genie_jobs import (
         _USE_DEFAULT_PROMPTS,
         submit_genie_bundle_to_qdc_device,
     )

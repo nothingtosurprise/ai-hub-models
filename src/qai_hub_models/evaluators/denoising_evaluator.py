@@ -8,9 +8,12 @@ from __future__ import annotations
 import numpy as np
 import torch
 
-from qai_hub_models.evaluators.metrics import PSNR, MetricMetadata
 from qai_hub_models.utils.base_evaluator import BaseEvaluator
 from qai_hub_models.utils.compare import compute_psnr
+from qai_hub_models.utils.metrics import (
+    PSNR,
+    MetricMetadata,
+)
 
 
 class DenoisingEvaluator(BaseEvaluator):

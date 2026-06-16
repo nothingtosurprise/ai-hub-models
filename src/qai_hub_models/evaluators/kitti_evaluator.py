@@ -11,10 +11,13 @@ import numpy as np
 import torch
 
 from qai_hub_models.datasets.kitti import KITTI_LABELS_ASSET
-from qai_hub_models.evaluators.metrics import AVERAGE_PRECISION, MetricMetadata
 from qai_hub_models.evaluators.utils.kitti import eval_class
 from qai_hub_models.models.centernet_3d.util import ddd_post_process
 from qai_hub_models.utils.base_evaluator import BaseEvaluator
+from qai_hub_models.utils.metrics import (
+    AVERAGE_PRECISION,
+    MetricMetadata,
+)
 
 
 class KittiEvaluator(BaseEvaluator):

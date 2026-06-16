@@ -787,7 +787,7 @@ def run_llm_perf_test(
     context_lengths = metadata.genie.context_lengths
 
     # QDC run
-    from qai_hub_models.utils.qdc.genie_jobs import (
+    from qai_hub_models.models._shared.llm.qdc.genie_jobs import (
         _USE_DEFAULT_PROMPTS,
         save_eval_results_json,
         submit_genie_bundle_to_qdc_device,

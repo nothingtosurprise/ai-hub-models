@@ -15,8 +15,11 @@ from transformers import AutoConfig, PreTrainedTokenizerBase
 from transformers.modeling_outputs import CausalLMOutputWithPast
 
 from qai_hub_models.evaluators.llm_evaluator import LLMEvaluator
-from qai_hub_models.evaluators.metrics import MMMU, MetricMetadata
 from qai_hub_models.utils.base_evaluator import _DataLoader
+from qai_hub_models.utils.metrics import (
+    MMMU,
+    MetricMetadata,
+)
 
 if TYPE_CHECKING:
     from qai_hub_models.models._shared.llm.generator import LLM_Generator

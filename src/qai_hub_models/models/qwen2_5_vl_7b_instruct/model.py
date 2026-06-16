@@ -56,6 +56,9 @@ from qai_hub_models.models._shared.llm.common import LLMIOType
 from qai_hub_models.models._shared.llm.generator_factory import (
     HubCompatibleVLMGenerator,
 )
+from qai_hub_models.models._shared.llm.llm_helpers import (
+    export_embedding_weights_from_tensor,
+)
 from qai_hub_models.models._shared.llm.model import (
     DEFAULT_CONTEXT_LENGTH,
     DEFAULT_SEQUENCE_LENGTH,
@@ -86,7 +89,6 @@ from qai_hub_models.utils.base_model import (
 from qai_hub_models.utils.checkpoint import CheckpointType
 from qai_hub_models.utils.export_result import MultiGraphGroup
 from qai_hub_models.utils.input_spec import InputSpec
-from qai_hub_models.utils.llm_helpers import export_embedding_weights_from_tensor
 from qai_hub_models.utils.onnx.helpers import ONNXBundle, mock_torch_onnx_inference
 
 logger = logging.getLogger(__name__)
@@ -1281,7 +1283,7 @@ class Qwen2_5_VL_7B_Collection(MultiGraphCollectionModel):
         metadata: ModelMetadata,
     ) -> None:
         """Write genie-app assets: genie config, embedding table, tokenizer, HTP config, app script."""
-        from qai_hub_models.utils.llm_helpers import (
+        from qai_hub_models.models._shared.llm.llm_helpers import (
             create_genie_config,
             generate_genie_app_script,
             save_htp_config_for_genie_bundle,

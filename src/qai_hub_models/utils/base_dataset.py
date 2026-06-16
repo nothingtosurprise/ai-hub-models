@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 import os
 import shutil
 from abc import ABC, abstractmethod
@@ -27,6 +28,7 @@ __all__ = [
     "DatasetMetadata",
     "DatasetSplit",
     "get_folder_name",
+    "instantiate_dataset",
 ]
 
 
@@ -171,3 +173,22 @@ class BaseDataset(Dataset, Sized, ABC):
     def get_dataset_metadata() -> DatasetMetadata:
         """Metadata about the dataset. Used for publishing on the website."""
         raise NotImplementedError()
+
+
+def instantiate_dataset(
+    dataset_cls: type[BaseDataset],
+    split: DatasetSplit,
+    input_spec: InputSpec | None = None,
+    **kwargs: Any,
+) -> BaseDataset:
+    init_params = inspect.signature(dataset_cls.__init__).parameters
+    if input_spec is not None and "input_spec" in init_params:
+        kwargs["input_spec"] = input_spec
+
+    has_var_keyword = any(
+        p.kind == inspect.Parameter.VAR_KEYWORD for p in init_params.values()
+    )
+    if not has_var_keyword:
+        kwargs = {k: v for k, v in kwargs.items() if k in init_params}
+
+    return dataset_cls(split=split, **kwargs)

@@ -89,6 +89,10 @@ from qai_hub_models.models._shared.llm.common import (
     LLMIOType,
     cleanup,
 )
+from qai_hub_models.models._shared.llm.llm_helpers import (
+    create_genie_config,
+    save_htp_config_for_genie_bundle,
+)
 from qai_hub_models.models._shared.llm.onnx_optimize import optimize_onnx_model
 from qai_hub_models.models._shared.llm.sha_dynamic_kvcache import (
     SHADynamicCacheNewValueOnly,
@@ -98,10 +102,6 @@ from qai_hub_models.utils.aimet.config_loader import get_aimet_config_path
 from qai_hub_models.utils.asset_loaders import CachedWebModelAsset
 from qai_hub_models.utils.base_model import BaseModel
 from qai_hub_models.utils.input_spec import InputSpec
-from qai_hub_models.utils.llm_helpers import (
-    create_genie_config,
-    save_htp_config_for_genie_bundle,
-)
 from qai_hub_models.utils.onnx.helpers import (
     ONNXBundle,
     generate_wrapper_onnx_file,
@@ -2495,7 +2495,9 @@ class LLM_AIMETOnnx(AIMETOnnxQuantizableMixin, LLMConfigEditor, BaseModel, ABC):
         )
 
         # genie-app-script.txt
-        from qai_hub_models.utils.llm_helpers import generate_genie_app_script
+        from qai_hub_models.models._shared.llm.llm_helpers import (
+            generate_genie_app_script,
+        )
 
         genie_script = generate_genie_app_script(pipeline_nodes, [], sample_inputs)
         with open(output_path / "genie-app-script.txt", "w") as f:

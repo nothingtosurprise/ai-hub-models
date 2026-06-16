@@ -12,14 +12,14 @@ import numpy as np
 import torch
 
 from qai_hub_models.datasets.cocobody import CocoBodyDataset
-from qai_hub_models.evaluators.metrics import (
+from qai_hub_models.evaluators.utils.pose import get_final_preds
+from qai_hub_models.extern.xtcocotools.cocoeval import COCOeval
+from qai_hub_models.utils.base_evaluator import BaseEvaluator
+from qai_hub_models.utils.metrics import (
     MEAN_AVERAGE_PRECISION,
     PERCENTAGE_CORRECT_KEYPOINTS,
     MetricMetadata,
 )
-from qai_hub_models.evaluators.utils.pose import get_final_preds
-from qai_hub_models.extern.xtcocotools.cocoeval import COCOeval
-from qai_hub_models.utils.base_evaluator import BaseEvaluator
 from qai_hub_models.utils.printing import suppress_stdout
 
 

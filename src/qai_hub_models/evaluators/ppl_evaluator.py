@@ -12,7 +12,10 @@ import torch
 from torch.nn import CrossEntropyLoss
 
 from qai_hub_models.evaluators.llm_evaluator import LLMEvaluator
-from qai_hub_models.evaluators.metrics import PERPLEXITY, MetricMetadata
+from qai_hub_models.utils.metrics import (
+    PERPLEXITY,
+    MetricMetadata,
+)
 
 if TYPE_CHECKING:
     from transformers import PreTrainedTokenizerBase

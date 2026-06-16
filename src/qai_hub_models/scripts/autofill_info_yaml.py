@@ -13,8 +13,10 @@ import subprocess
 import sys
 from typing import Any
 
+import numpy as np
 import qai_hub as hub
 from ruamel.yaml import YAML
+from tflite import Model as TFModel
 
 from qai_hub_models import TargetRuntime
 from qai_hub_models.configs.info_yaml import QAIHMModelInfo
@@ -24,11 +26,57 @@ from qai_hub_models.utils.export_result import (
     ExportResult,
     LegacyCollectionExportResult,
 )
-from qai_hub_models.utils.measurement import (
-    get_checkpoint_file_size,
-    get_tflite_unique_parameters,
-)
 from qai_hub_models.utils.path_helpers import MODEL_IDS, QAIHM_MODELS_ROOT
+
+
+def _display_with_sig_figs(num: float, num_sig_figs: int = 3) -> str:
+    rounded_num = float(f"{num:.{num_sig_figs}g}")
+    num_digits = len(str(int(rounded_num)))
+    return f"{rounded_num:.{max(0, num_sig_figs - num_digits)}f}"
+
+
+def _get_formatted_size(size: float, units: list[str], unit_step_size: float) -> str:
+    unit_index = 0
+    while size >= unit_step_size and unit_index < len(units) - 1:
+        size /= unit_step_size
+        unit_index += 1
+    return f"{_display_with_sig_figs(size)}{units[unit_index]}"
+
+
+def get_checkpoint_file_size(model_path: str) -> str:
+    num_bytes = os.path.getsize(model_path)
+    return _get_formatted_size(num_bytes, [" B", " KB", " MB", " GB", " TB"], 1024.0)
+
+
+def get_tflite_unique_parameters(model_path: str) -> str:
+    """
+    TFLite parameters are defined at two levels: Tensors and Buffers.
+
+    Only tensors can tell us how many parameters, but we do not want to over-count
+    tensors that point to the same buffers. So we keep track of all buffers
+    we have counted through tensors.
+    """
+    with open(model_path, "rb") as f:
+        tflite_model = f.read()
+    model = TFModel.GetRootAs(tflite_model, 0)
+
+    parameter_cnt = 0
+    buffers_counted: set[int] = set()
+    for i in range(model.SubgraphsLength()):
+        graph = model.Subgraphs(i)
+        assert graph is not None
+        for j in range(graph.TensorsLength()):
+            tensor = graph.Tensors(j)
+            assert tensor is not None
+            buf_index = tensor.Buffer()
+
+            buffer = model.Buffers(buf_index)
+            assert buffer is not None
+            if not buffer.DataIsNone() and buf_index not in buffers_counted:
+                parameter_cnt += int(np.prod(tensor.ShapeAsNumpy()))
+                buffers_counted.add(buf_index)
+
+    return _get_formatted_size(parameter_cnt, ["", "K", "M", "B", "T"], 1000.0)
 
 
 def get_model_size_and_parameters(

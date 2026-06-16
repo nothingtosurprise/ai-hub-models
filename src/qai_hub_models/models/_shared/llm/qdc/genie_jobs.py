@@ -21,21 +21,19 @@ from qualcomm_device_cloud_sdk.models import ArtifactType
 from transformers import AutoTokenizer
 
 from qai_hub_models.models._shared.llm.model import LLMBase
-from qai_hub_models.utils.qdc.qdc_jobs import (
+from qai_hub_models.models._shared.llm.qdc.qdc_jobs import (
     HUB_DEVICE_TO_QDC_DEVICE_MAP,
     POLL_INTERVAL,
     QDCDevice,
     QDCJobs,
 )
 
+DEFAULT_LLM_SYSTEM_PROMPT = LLMBase.default_system_prompt
+
 DEFAULT_EVAL_PROMPTS_PATH = os.path.normpath(
     os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "..",
-        "..",
-        "models",
-        "_shared",
-        "llm",
         "eval_prompts.json",
     )
 )
@@ -83,7 +81,7 @@ def _prepare_eval_prompts_in_bundle(
 
     for idx, prompt in enumerate(prompts):
         messages = [
-            {"role": "system", "content": LLMBase.default_system_prompt},
+            {"role": "system", "content": DEFAULT_LLM_SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
         ]
         try:

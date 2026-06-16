@@ -16,9 +16,12 @@ from transformers import AutoTokenizer
 from qai_hub_models.datasets.amazon_counterfactual import (
     AmazonCounterfactualClassificationDataset,
 )
-from qai_hub_models.evaluators.metrics import ACCURACY_TOP1, MetricMetadata
 from qai_hub_models.utils.base_dataset import DatasetSplit
 from qai_hub_models.utils.base_evaluator import BaseEvaluator
+from qai_hub_models.utils.metrics import (
+    ACCURACY_TOP1,
+    MetricMetadata,
+)
 
 
 class NomicEmbedTextEvaluator(BaseEvaluator):

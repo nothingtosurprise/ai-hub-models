@@ -16,7 +16,6 @@ from qai_hub.public_rest_api import DatasetEntries
 
 from qai_hub_models import Precision
 from qai_hub_models.configs.tool_versions import ToolVersions
-from qai_hub_models.evaluators.metrics import MetricMetadata
 from qai_hub_models.scorecard import (
     ScorecardProfilePath,
 )
@@ -27,6 +26,7 @@ from qai_hub_models.utils.asset_loaders import load_yaml, qaihm_temp_dir
 from qai_hub_models.utils.base_config import BaseQAIHMConfig
 from qai_hub_models.utils.base_dataset import DatasetMetadata
 from qai_hub_models.utils.file_hash import file_hashes_are_identical
+from qai_hub_models.utils.metrics import MetricMetadata
 from qai_hub_models.utils.onnx.torch_wrapper import extract_onnx_zip
 
 __all__ = [

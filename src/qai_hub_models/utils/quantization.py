@@ -12,8 +12,8 @@ import torch
 from qai_hub.client import DatasetEntries
 from torch.utils.data import DataLoader
 
-from qai_hub_models.datasets import DatasetSplit, instantiate_dataset
 from qai_hub_models.utils.base_app import CollectionAppQuantizeProtocol
+from qai_hub_models.utils.base_dataset import DatasetSplit, instantiate_dataset
 from qai_hub_models.utils.base_model import BaseModel, PretrainedCollectionModel
 from qai_hub_models.utils.evaluate import sample_dataset
 from qai_hub_models.utils.input_spec import (

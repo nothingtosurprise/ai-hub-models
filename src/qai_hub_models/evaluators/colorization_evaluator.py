@@ -9,8 +9,11 @@ import cv2
 import numpy as np
 import torch
 
-from qai_hub_models.evaluators.metrics import COLORFULNESS, MetricMetadata
 from qai_hub_models.utils.base_evaluator import BaseEvaluator
+from qai_hub_models.utils.metrics import (
+    COLORFULNESS,
+    MetricMetadata,
+)
 
 
 class ColorizationEvaluator(BaseEvaluator):

@@ -29,11 +29,6 @@ from torch.utils.data import DataLoader, Dataset, Sampler, random_split
 from tqdm import tqdm
 from typing_extensions import Self
 
-from qai_hub_models.datasets import (
-    BaseDataset,
-    DatasetSplit,
-    instantiate_dataset,
-)
 from qai_hub_models.protocols import ExecutableModelProtocol
 from qai_hub_models.utils.asset_loaders import (
     get_hub_datasets_path,
@@ -45,7 +40,12 @@ from qai_hub_models.utils.base_app import (
     CollectionAppEvaluateProtocol,
     CollectionModelEvalGenerator,
 )
-from qai_hub_models.utils.base_dataset import get_folder_name
+from qai_hub_models.utils.base_dataset import (
+    BaseDataset,
+    DatasetSplit,
+    get_folder_name,
+    instantiate_dataset,
+)
 from qai_hub_models.utils.base_evaluator import BaseEvaluator
 from qai_hub_models.utils.base_model import BaseModel, CollectionModel
 from qai_hub_models.utils.envvars import IsOnCIEnvvar

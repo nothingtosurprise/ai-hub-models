@@ -16,7 +16,7 @@ import torch
 from qai_hub.public_rest_api import DatasetEntries
 
 from qai_hub_models import TargetRuntime
-from qai_hub_models.models.protocols import ExecutableModelProtocol
+from qai_hub_models.protocols import ExecutableModelProtocol
 from qai_hub_models.utils.asset_loaders import ModelZooAssetConfig, VersionType
 from qai_hub_models.utils.export_result import CollectionExportResult
 from qai_hub_models.utils.input_spec import InputSpec

@@ -34,7 +34,6 @@ from qai_hub_models.configs.proto_helpers import (
     tag_to_proto,
     use_case_to_proto,
 )
-from qai_hub_models.evaluators.metrics import VALID_METRIC_PAIRS
 from qai_hub_models.scorecard import ScorecardDevice
 from qai_hub_models.utils.asset_loaders import (
     ASSET_CONFIG,
@@ -42,6 +41,7 @@ from qai_hub_models.utils.asset_loaders import (
     QAIHM_WEB_ASSET,
 )
 from qai_hub_models.utils.base_config import BaseQAIHMConfig
+from qai_hub_models.utils.metrics import VALID_METRIC_PAIRS
 from qai_hub_models.utils.path_helpers import (
     MODEL_IDS,
     MODELS_PACKAGE_NAME,

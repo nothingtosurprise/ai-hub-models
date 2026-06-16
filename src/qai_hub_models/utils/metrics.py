@@ -28,8 +28,6 @@ class MetricMetadata(NamedTuple):
         return self._replace(description=description)
 
 
-# Set of valid (metric_name, unit) pairs, built during module init
-# and frozen at the bottom of this file.
 _VALID_METRIC_PAIRS: set[tuple[str, str]] = set()
 
 
@@ -244,5 +242,4 @@ HOMOGRAPHY_ACCURACY = _register_metric(
     )
 )
 
-# Freeze the valid pairs set now that all metrics are registered.
 VALID_METRIC_PAIRS: frozenset[tuple[str, str]] = frozenset(_VALID_METRIC_PAIRS)

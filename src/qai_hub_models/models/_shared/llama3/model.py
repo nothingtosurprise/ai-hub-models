@@ -78,6 +78,10 @@ from qai_hub_models.models._shared.llama3.model_adaptations import (
     SHALlamaAttention,
 )
 from qai_hub_models.models._shared.llm.common import LLMIOType
+from qai_hub_models.models._shared.llm.llm_helpers import (
+    create_genie_config,
+    save_htp_config_for_genie_bundle,
+)
 from qai_hub_models.models._shared.llm.model import (
     Embedding,
     PositionProcessorBase,
@@ -90,10 +94,6 @@ from qai_hub_models.utils.base_multi_graph_model import (
 )
 from qai_hub_models.utils.checkpoint import CheckpointType
 from qai_hub_models.utils.input_spec import InputSpec
-from qai_hub_models.utils.llm_helpers import (
-    create_genie_config,
-    save_htp_config_for_genie_bundle,
-)
 from qai_hub_models.utils.onnx.helpers import (
     ONNXBundle,
     mock_torch_onnx_inference,

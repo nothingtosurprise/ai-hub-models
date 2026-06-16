@@ -9,12 +9,12 @@ import torch
 from torchmetrics.detection import MeanAveragePrecision
 from ultralytics.utils.ops import process_mask
 
-from qai_hub_models.evaluators.metrics import (
+from qai_hub_models.utils.base_evaluator import BaseEvaluator
+from qai_hub_models.utils.bounding_box_processing import batched_nms
+from qai_hub_models.utils.metrics import (
     MEAN_AVERAGE_PRECISION_IOU_5_95,
     MetricMetadata,
 )
-from qai_hub_models.utils.base_evaluator import BaseEvaluator
-from qai_hub_models.utils.bounding_box_processing import batched_nms
 
 
 class YoloSegmentationOutputEvaluator(BaseEvaluator):

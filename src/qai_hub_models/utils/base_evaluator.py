@@ -13,7 +13,7 @@ import torch
 from torch.utils.data.dataloader import DataLoader
 from tqdm import tqdm
 
-from qai_hub_models.evaluators.metrics import MetricMetadata
+from qai_hub_models.utils.metrics import MetricMetadata
 
 __all__ = [
     "BaseEvaluator",

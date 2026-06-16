@@ -8,13 +8,13 @@ from __future__ import annotations
 import os
 
 from qai_hub_models import TargetRuntime
+from qai_hub_models.models._shared.llm.llm_helpers import get_kv_cache_names
 from qai_hub_models.utils.asset_loaders import CachedWebModelAsset
 from qai_hub_models.utils.base_model import (
     BasePrecompiledModel,
     PrecompiledCollectionModel,
 )
 from qai_hub_models.utils.input_spec import InputSpec
-from qai_hub_models.utils.llm_helpers import get_kv_cache_names
 
 MODEL_ID = __name__.split(".")[-2]
 MODEL_ASSET_VERSION = 2
