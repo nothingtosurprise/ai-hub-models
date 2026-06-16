@@ -759,6 +759,9 @@ class DynamicQuantizablePreSplitMixin(
     sequence_length: int
     context_length: int
 
+    # Used unless ``_skip_quantsim_creation`` is not None.
+    skip_quantsim_creation_default: bool = False
+
     def __init__(
         self,
         checkpoint: str | os.PathLike | Path = "DEFAULT",
@@ -827,7 +830,7 @@ class DynamicQuantizablePreSplitMixin(
         host_device: torch.device | None = None,
         precision: Precision | None = None,
         fp_model: FPModelT | None = None,
-        _skip_quantsim_creation: bool = False,
+        _skip_quantsim_creation: bool | None = None,
     ) -> Self:
         """
         Load or return a cached Quantizable PreSplit.
@@ -850,13 +853,16 @@ class DynamicQuantizablePreSplitMixin(
             creating a duplicate. If not provided and checkpoint starts
             with ``"DEFAULT"``, one is created automatically.
         _skip_quantsim_creation
-            Skip QuantSim creation (for testing).
+            Skip QuantSim creation (for testing). When ``None`` (the
+            default), falls back to ``cls.skip_quantsim_creation_default``.
 
         Returns
         -------
         Self
             The cached or newly created instance.
         """
+        if _skip_quantsim_creation is None:
+            _skip_quantsim_creation = cls.skip_quantsim_creation_default
         if precision is None:
             precision = cls.default_precision
 
@@ -931,6 +937,9 @@ class SplitForwardMixin:
     Subclasses must override ``_get_split_part_classes()`` to return
     the concrete Part classes.
     """
+
+    # Used unless ``_skip_quantsim_creation`` is not None.
+    skip_quantsim_creation_default: bool = True
 
     _parts: list | None
     _input_names_for_parts: list[list] | None
