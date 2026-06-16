@@ -408,12 +408,17 @@ def _legacy_evaluate_impl(
             accumulate_logits_on_cpu=evaluator.accumulate_logits_on_cpu,
         )
 
+        # no_grad: this forward-only reference pass would otherwise retain the
+        # full autograd graph and OOM on a large FP model.
         fp_logits_list = []
-        for input_ids, attention_mask, *_ in eval_dataloader:
-            input_ids = input_ids.to(host_device)
-            attention_mask = attention_mask.to(host_device)
-            fp_logits = fp_generator(input_ids, attention_mask, DynamicCache()).logits
-            fp_logits_list.append(fp_logits.detach().cpu())
+        with torch.no_grad():
+            for input_ids, attention_mask, *_ in eval_dataloader:
+                input_ids = input_ids.to(host_device)
+                attention_mask = attention_mask.to(host_device)
+                fp_logits = fp_generator(
+                    input_ids, attention_mask, DynamicCache()
+                ).logits
+                fp_logits_list.append(fp_logits.cpu())
 
         # Augment dataloader
         dataset = AugmentedLabelDataset(eval_dataloader.dataset, fp_logits_list)
@@ -423,6 +428,10 @@ def _legacy_evaluate_impl(
             batch_size=eval_dataloader.batch_size,
             collate_fn=eval_dataloader.collate_fn,
         )
+
+        # Drop the wrapper, not the underlying fp_model (reused via final_kwargs
+        # on DEFAULT; moved to CPU + cache-emptied below).
+        del fp_generator
 
     if not is_fp:
         fp_model.to(torch.device("cpu"))
