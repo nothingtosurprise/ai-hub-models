@@ -362,11 +362,38 @@ def _get_lm_head_sizes(onnxmodel: onnx.ModelProto) -> tuple[int, int]:
         for node in reversed(onnxmodel.graph.node)
         if node.op_type in ("Conv", "MatMul", "Gemm")
     )
+    initializers = {i.name: i for i in onnxmodel.graph.initializer}
+
+    # The lm_head weight is usually a direct initializer input to the final
+    # MatMul/Conv/Gemm. Dynamo (torch.export) ONNX, however, often feeds the
+    # weight through a Transpose of the named initializer (e.g. an nn.Linear
+    # lm_head emits ``MatMul(x, Transpose(model.lm_head.weight))``). In that
+    # case the weight name resolves to a Transpose node rather than an
+    # initializer; follow it to the source initializer and remember that the
+    # two trailing dims are swapped relative to the direct-initializer case.
+    transposed = False
+    if lm_head_weight_name not in initializers:
+        producer = next(
+            (
+                n
+                for n in onnxmodel.graph.node
+                if lm_head_weight_name in n.output and n.op_type == "Transpose"
+            ),
+            None,
+        )
+        if producer is not None and producer.input[0] in initializers:
+            lm_head_weight_name = producer.input[0]
+            transposed = True
+
     (lm_head_weight,) = (
         i for i in onnxmodel.graph.initializer if lm_head_weight_name == i.name
     )
     if len(lm_head_weight.dims) == 2:
-        embedding_size, vocab_size = lm_head_weight.dims
+        if transposed:
+            # Transposed weight is [vocab_size, embedding_size].
+            vocab_size, embedding_size = lm_head_weight.dims
+        else:
+            embedding_size, vocab_size = lm_head_weight.dims
     else:
         (lm_head,) = (
             i
