@@ -147,7 +147,7 @@ jobs:
     if: ${{ !cancelled() && (inputs.is_gpu_weekly || inputs.is_gpu_nightly) && needs.check_gpu_node.result == 'success' && (needs.start_runner.result == 'success' || needs.start_runner.result == 'skipped') }}
     runs-on: ${{ needs.check_gpu_node.outputs.use_kube == 'true' && fromJson(format('["{0}"]', inputs.runner-id)) || fromJson('{"group":"GPU"}') }}
     container: ${{ needs.check_gpu_node.outputs.use_kube == 'false' && fromJson('{"image":"docker-registry.qualcomm.com/library/nvidia/cuda:12.6.3-cudnn-devel-ubuntu22.04","options":"--gpus all -v /local:/local"}') || null }}
-    timeout-minutes: 2160
+    timeout-minutes: 5760
     permissions:
       id-token: write
       packages: read

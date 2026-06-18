@@ -5,7 +5,6 @@ scorecard_path_to_website_runtime:
   onnx: onnx
   precompiled_qnn_onnx: onnx
   genie: genie
-  geniex_qairt: genie
   voice_ai: voice_ai
 scorecard_path_assets_require_chipset:
   tflite: false
@@ -14,7 +13,6 @@ scorecard_path_assets_require_chipset:
   onnx: false
   precompiled_qnn_onnx: true
   genie: true
-  geniex_qairt: true
   voice_ai: true
 scorecard_path_extensions:
   tflite: .tflite
@@ -23,7 +21,6 @@ scorecard_path_extensions:
   onnx: .onnx.zip
   precompiled_qnn_onnx: .onnx.zip
   genie: .genie.zip
-  geniex_qairt: .geniex.zip
   voice_ai: .bin
 form_factors:
   Phone:

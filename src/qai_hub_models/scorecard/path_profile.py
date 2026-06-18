@@ -84,7 +84,6 @@ class ScorecardProfilePath(Enum, metaclass=ScorecardProfilePathMeta):
             ScorecardProfilePath.QNN_DLC,
             ScorecardProfilePath.QNN_CONTEXT_BINARY,
             ScorecardProfilePath.GENIE,
-            ScorecardProfilePath.GENIEX_QAIRT,
             ScorecardProfilePath.VOICE_AI,
         ]
 
