@@ -36,7 +36,7 @@ DEFAULT_EXPORT_SEQUENCE_LENGTHS = GLOBAL_DEFAULT_EXPORT_SEQUENCE_LENGTHS
 
 # Model identification
 MODEL_ID = __name__.split(".")[-2]
-MODEL_ASSET_VERSION = 6
+MODEL_ASSET_VERSION = 7
 
 # Model architecture constants (from Llama 3.2 3B)
 NUM_LAYERS = 28
