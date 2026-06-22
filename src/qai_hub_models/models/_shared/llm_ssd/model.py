@@ -18,12 +18,52 @@ import qai_hub as hub
 import torch
 
 from qai_hub_models import Precision, TargetRuntime
-from qai_hub_models.models._shared.llm.model import LLM_AIMETOnnx, LLMBase
+from qai_hub_models.models._shared.llm.model import LLMDynamic_AIMETOnnx
 
 with contextlib.suppress(ImportError):
     from transformers import PretrainedConfig
 
 GENIE_CONFIG_JSON = "genie_config.json"
+
+
+def append_ssd_forecast_embeddings(
+    model: torch.nn.Module,
+    ssd_forecast_ckpt: str | os.PathLike | Path | None,
+) -> None:
+    """Concatenate the SSD forecast token embeddings to the embedding table.
+
+    The speculative-decoding forecast tokens are stored as extra rows appended
+    to ``embed_tokens``. The quantized encodings were calibrated against this
+    extended table (vocab + forecast tokens), so the embedding must be extended
+    here for the ONNX graph (and its converted encodings) to line up.
+
+    Parameters
+    ----------
+    model
+        The FP model whose ``model.embed_tokens`` table is extended in-place.
+    ssd_forecast_ckpt
+        Path to the SSD forecast checkpoint. If None, this is a no-op.
+    """
+    if ssd_forecast_ckpt is None:
+        return
+    ssd_param = torch.load(ssd_forecast_ckpt, map_location="cpu", weights_only=True)
+    ssd_forecast_embeddings = ssd_param["forecast_embedding"]
+    if len(ssd_forecast_embeddings) < 1:
+        return
+    embed_table = cast(torch.nn.Embedding, model.model.embed_tokens)  # type: ignore[union-attr]
+    assert embed_table.weight.shape[1] == ssd_forecast_embeddings.shape[1], (
+        "Mismatching token embedding size for embed_tokens"
+    )
+    embed_table.weight.data = torch.cat(
+        [
+            embed_table.weight.data,
+            ssd_forecast_embeddings.to(
+                dtype=embed_table.weight.dtype, device=embed_table.weight.device
+            ),
+        ],
+        dim=0,
+    )
+    embed_table.num_embeddings = embed_table.weight.shape[0]
 
 
 def apply_ssd_engine_overrides(engine: dict[str, Any]) -> None:
@@ -128,49 +168,8 @@ def _save_kv_cache(
         value_cache.tofile(handle)
 
 
-class LLM_SSD_Base(LLMBase):
-    """Extends LLMBase with SSD (Self Speculative Decoding) forecast support."""
-
-    def __init__(
-        self,
-        *args: Any,
-        ssd_forecast_ckpt: str | os.PathLike | Path | None = None,
-        **kwargs: Any,
-    ) -> None:
-        """
-        Parameters
-        ----------
-        *args
-            Positional arguments forwarded to LLMBase.
-        ssd_forecast_ckpt
-            Path to SSD forecast file. If provided, the SSD forecast token
-            embeddings are concatenated to the model's embedding table.
-        **kwargs
-            Keyword arguments forwarded to LLMBase.
-        """
-        super().__init__(*args, **kwargs)
-        if ssd_forecast_ckpt is not None:
-            ssd_param = torch.load(
-                ssd_forecast_ckpt, map_location="cpu", weights_only=True
-            )
-            ssd_forecast_embeddings = ssd_param["forecast_embedding"]
-            if len(ssd_forecast_embeddings) >= 1:
-                embed_table = cast(torch.nn.Embedding, self.model.model.embed_tokens)  # type: ignore[union-attr, unused-ignore]
-                assert (
-                    embed_table.weight.shape[1] == ssd_forecast_embeddings.shape[1]
-                ), "Mismatching token embedding size for embed_tokens"
-                embed_table.weight.data = torch.cat(
-                    [
-                        embed_table.weight.data,
-                        ssd_forecast_embeddings.to(embed_table.weight.dtype),
-                    ],
-                    dim=0,
-                )
-                embed_table.num_embeddings = embed_table.weight.shape[0]
-
-
-class LLM_SSD_AIMETOnnx(LLM_AIMETOnnx):
-    """Extends LLM_AIMETOnnx with SSD (Self Speculative Decoding) support."""
+class LLMDynamic_SSD_AIMETOnnx(LLMDynamic_AIMETOnnx):
+    """Extends LLMDynamic_AIMETOnnx with SSD (Self Speculative Decoding) support."""
 
     @classmethod
     def prepare_genie_assets(

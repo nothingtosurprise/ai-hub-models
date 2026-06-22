@@ -2,39 +2,50 @@
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 from typing import Any
 
-import torch
-from typing_extensions import Self
-
 from qai_hub_models import Precision
+
+# LLMIOType is re-exported from this module so the CLI input-spec parser can
+# resolve the inherited get_input_spec's "llm_io_type" annotation, which it
+# looks up in the concrete model's module.
 from qai_hub_models.models._shared.llama3.model import (
-    Llama3Base,
-    Llama3Base_AIMETOnnx,
-    Llama3Base_QNN,
+    LlamaPartBase,
+    LlamaPreSplitBase,
+    LlamaPreSplitCollectionBase,
+    LlamaQuantizablePreSplitBase,
 )
-from qai_hub_models.models._shared.llm.common import LLMIOType
-from qai_hub_models.models._shared.llm.model import (
-    DEFAULT_CONTEXT_LENGTH,
-    DEFAULT_SEQUENCE_LENGTH,
-    LLMBase,
-    determine_precision_from_checkpoint,
-)
+from qai_hub_models.models._shared.llm.common import LLMIOType  # noqa: F401
 from qai_hub_models.models._shared.llm.model import (
     DEFAULT_EXPORT_CONTEXT_LENGTHS as GLOBAL_DEFAULT_EXPORT_CONTEXT_LENGTHS,
 )
-from qai_hub_models.models._shared.llm_ssd.model import LLM_SSD_AIMETOnnx, LLM_SSD_Base
+from qai_hub_models.models._shared.llm.model import SplitForwardMixin
+from qai_hub_models.models._shared.llm_ssd.model import (
+    LLMDynamic_SSD_AIMETOnnx,
+    append_ssd_forecast_embeddings,
+)
+from qai_hub_models.models._shared.lm_driver.generator import (
+    HubCompatibleGenerator,
+)
 from qai_hub_models.utils.asset_loaders import CachedWebModelAsset
-from qai_hub_models.utils.input_spec import InputSpec, OutputSpec
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_EXPORT_CONTEXT_LENGTHS = GLOBAL_DEFAULT_EXPORT_CONTEXT_LENGTHS
+# SSD uses a smaller "token" sequence length (32) than the standard models so
+# the speculative-decoding forecast tokens fit in one prompt-processor graph.
 DEFAULT_EXPORT_SEQUENCE_LENGTHS = [128, 32]
 
+# Model identification
+MODEL_ID = __name__.split(".")[-2]
+MODEL_ASSET_VERSION = 4
+
+# Model architecture constants (from Llama 3.2 3B)
 NUM_LAYERS = 28
 NUM_SPLITS = 4
 NUM_LAYERS_PER_SPLIT = 14
@@ -42,283 +53,156 @@ HIDDEN_SIZE = 3072
 NUM_KEY_VALUE_HEADS = 8
 NUM_ATTN_HEADS = 24
 
-# Hugging face repo name and url
+# Hugging Face repo
 HF_REPO_NAME = "meta-llama/Llama-3.2-3B-Instruct"
 HF_REPO_URL = f"https://huggingface.co/{HF_REPO_NAME}"
 
-# Minimum memory (RAM+swap) recommended for export.
-MODEL_ID = __name__.split(".")[-2]
-MODEL_ASSET_VERSION = 3
+# Memory requirements
 MIN_MEMORY_RECOMMENDED = 80
+
+# Precision settings
 DEFAULT_PRECISION = Precision.w4a16
 SUPPORTED_PRECISIONS = [Precision.w4a16]
 DEFAULT_CHECKPOINT = {
-    Precision.w4a16: "llama32_ckpt_w4a16",
+    Precision.w4a16: "w4a16",
 }
 
+# Name used for split ONNX file basenames (e.g. Llama3_2_3B_SSD_1_of_4.onnx)
+SPLIT_MODEL_NAME = "Llama3_2_3B_SSD"
 
-class Llama3_2_3B_SSD(LLM_SSD_Base, Llama3Base):
-    min_memory_recommended = MIN_MEMORY_RECOMMENDED
+
+class Llama3_2_3B_SSD_PreSplit(LlamaPreSplitBase):
+    """FP PreSplit for Llama 3.2 3B with SSD forecast embeddings."""
+
+    model_id = MODEL_ID
+    GeneratorClass = HubCompatibleGenerator
+    model_asset_version = MODEL_ASSET_VERSION
+    num_layers = NUM_LAYERS
+    hidden_size = HIDDEN_SIZE
+    num_attention_heads = NUM_ATTN_HEADS
+    num_key_value_heads = NUM_KEY_VALUE_HEADS
+    hf_repo_name = HF_REPO_NAME
+    split_model_name = SPLIT_MODEL_NAME
+    num_splits = NUM_SPLITS
+    num_layers_per_split = NUM_LAYERS_PER_SPLIT
     split_lm_head = True
-
-    def __init__(
-        self,
-        checkpoint: str | os.PathLike | Path = HF_REPO_NAME,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(
-            checkpoint=checkpoint,
-            *args,  # noqa: B026
-            **kwargs,
-        )
-
-    def _verify_ckpt(self) -> None:
-        super()._verify_ckpt()
-        if not (
-            self.llm_config.num_hidden_layers == NUM_LAYERS
-            and self.llm_config.hidden_size == HIDDEN_SIZE
-            and self.llm_config.num_attention_heads == NUM_ATTN_HEADS
-            and self.llm_config.num_key_value_heads == NUM_KEY_VALUE_HEADS
-        ):
-            raise ValueError("Model config is not compatible with our implementation.")
+    min_memory_recommended = MIN_MEMORY_RECOMMENDED
+    default_checkpoint = DEFAULT_CHECKPOINT
+    default_precision = DEFAULT_PRECISION
 
     @classmethod
     def _ssd_forecast_ckpt(cls) -> Path | None:
+        """Fetch the SSD self-speculative-decoding forecast module checkpoint.
+
+        Defined as a classmethod (rather than a module-level helper) so the
+        shared ``LLMDynamic_SSD_AIMETOnnx.prepare_genie_assets`` can reach it via
+        ``cls.FPModel._ssd_forecast_ckpt()``.
+        """
         return CachedWebModelAsset.from_asset_store(
             MODEL_ID, MODEL_ASSET_VERSION, "forecast_module_state_dict.pt"
         ).fetch()
 
-    @classmethod
-    def from_pretrained(
-        cls,
-        checkpoint: str | os.PathLike | Path = HF_REPO_NAME,
-        sequence_length: int = DEFAULT_SEQUENCE_LENGTH,
-        context_length: int = DEFAULT_CONTEXT_LENGTH,
-        host_device: torch.device | None = None,
-        load_pretrained: bool = True,
-        _skip_optimizations: list[str] | None = None,
-    ) -> Self:
-        """
-        Load a pre-trained Llama 3.2 (3B) model from Meta via HuggingFace.
-
-        checkpoint:
-            Local path or Hugging Face name of floating point checkpoint.
-        sequence_length:
-            Instantiate with this token sequence length input. A longer
-            sequence length means the model is capable of processing more
-            tokens at once. This can only be set to greater than one to process
-            prompts, since responses are auto-regressive in nature and require
-            this to be 1.
-        context_length:
-            Total context length of model. Longer context length means the
-            model is more capable of making longer connections in the input
-            prompt. However, it also hurts runtime performance (both time-to-
-            first-token and tokens-per-second), so this is a tradeoff that may
-            depend on the use case.
-        """
-        return cls(
-            checkpoint=checkpoint,
-            sequence_length=sequence_length,
-            context_length=context_length,
-            host_device=host_device,
-            load_pretrained=load_pretrained,
-            _skip_optimizations=_skip_optimizations,
-            ssd_forecast_ckpt=cls._ssd_forecast_ckpt(),
-        )
-
-    def get_output_spec(self) -> OutputSpec:
-        return Llama3Base._get_output_spec(NUM_LAYERS)
-
-    def get_input_spec(
-        self,
-        llm_config: dict,
-        sequence_length: int = DEFAULT_SEQUENCE_LENGTH,
-        context_length: int = DEFAULT_CONTEXT_LENGTH,
-        llm_io_type: LLMIOType = LLMIOType.genie_input_ids,
-    ) -> InputSpec:
-        """
-        Parameters
-        ----------
-        llm_config
-            Model configuration dictionary.
-        sequence_length
-            Sequence length for the model.
-        context_length
-            Context length for the model.
-        llm_io_type
-            Input/output type for the LLM.
-
-        Returns
-        -------
-        InputSpec
-            Input specification for the model.
-        """
-        return Llama3Base._get_input_spec(
-            num_hidden_layers=llm_config["num_hidden_layers"],
-            sequence_length=sequence_length,
-            context_length=context_length,
-            hidden_size=llm_config["hidden_size"],
-            num_key_value_heads=llm_config["num_key_value_heads"],
-            num_attention_heads=llm_config["num_attention_heads"],
-            llm_io_type=llm_io_type,
-        )
-
-
-class Llama3_2_3B_SSD_AIMETOnnx(LLM_SSD_AIMETOnnx, Llama3Base_AIMETOnnx):
-    FPModel = Llama3_2_3B_SSD
-    split_lm_head = True
-
     def __init__(
-        self, checkpoint: str | os.PathLike | Path | None, *args: Any, **kwargs: Any
+        self,
+        checkpoint: str | os.PathLike | Path | None = None,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
-        super().__init__(
-            checkpoint=checkpoint,  # type: ignore[misc]
-            *args,  # noqa: B026
-            **kwargs,
-        )
-
-    @classmethod
-    def from_pretrained(
-        cls,
-        checkpoint: str | os.PathLike | Path | None = "DEFAULT",
-        host_device: torch.device | None = None,
-        sequence_length: int = DEFAULT_SEQUENCE_LENGTH,
-        context_length: int = DEFAULT_CONTEXT_LENGTH,
-        precision: Precision = DEFAULT_PRECISION,
-        fp_model: LLMBase | None = None,
-        _skip_quantsim_creation: bool = False,
-    ) -> Self:
-        """
-        Load weight from Huggingface and create Aimet-ONNX QuantSim.
-        Optionally load onnx model and AIMET encodings from a checkpoint.
-
-        Parameters
-        ----------
-        checkpoint
-            Path to previously calibrated AIMET encodings and ONNX
-            models. Note that encodings are sensitive to AIMET ONNX versions.
-            If passing None, initializes without encodings.
-        host_device
-            Device on which to load the model.
-        sequence_length
-            Sequence length for the model.
-        context_length
-            Context length for the model.
-        precision
-            Precision for quantization.
-        fp_model
-            Optional floating point model.
-        _skip_quantsim_creation
-            Internal parameter to skip quantsim creation. This helps export on platforms where aimet onnx is not available.
-
-        Returns
-        -------
-        model : Self
-            Instance of the quantized model.
-        """
-        if host_device is None:
-            host_device = torch.device("cpu")
-        if isinstance(checkpoint, str) and checkpoint.startswith("DEFAULT"):
-            precision = determine_precision_from_checkpoint(checkpoint) or precision
-            if precision not in SUPPORTED_PRECISIONS:
-                available_precisions = [str(p) for p in SUPPORTED_PRECISIONS]
-                raise ValueError(
-                    f"This model is not supported for {precision!s} precision. "
-                    f"Models are available in following precisions: {','.join(available_precisions)}."
-                )
-            if precision not in DEFAULT_CHECKPOINT:
-                available_checkpoints = [str(p) for p in DEFAULT_CHECKPOINT]
-                raise ValueError(
-                    f"No checkpoint is available for this model in {precision!s} precision. If you would "
-                    f"like to continue with this precision, please generate a local quantized checkpoint. "
-                    f"Checkpoints are available in the following precisions: {','.join(available_checkpoints)}."
-                )
-            precision_checkpoint = DEFAULT_CHECKPOINT[precision]
-            checkpoint = str(
-                CachedWebModelAsset.from_asset_store(
-                    MODEL_ID, MODEL_ASSET_VERSION, precision_checkpoint + ".zip"
-                ).fetch(extract=True)
-            )
-            # Generate necessary ONNX models
-            if fp_model is not None:
-                cls.create_onnx_models(
-                    checkpoint=checkpoint,
-                    fp_model=fp_model,
-                    context_length=context_length,
-                    export_sequence_lengths=[sequence_length],
-                    host_device=host_device,
-                    llm_io_type=fp_model.llm_io_type,
-                )
-
-                cls.save_tokenizer_and_config(checkpoint=checkpoint, fp_model=fp_model)
-        return super().from_pretrained(
-            checkpoint=checkpoint,
-            host_device=host_device,
-            sequence_length=sequence_length,
-            context_length=context_length,
-            precision=precision,
-            fp_model=fp_model,
-            _skip_quantsim_creation=_skip_quantsim_creation,
-        )
-
-    def get_output_spec(self) -> OutputSpec:
-        return Llama3Base._get_output_spec(NUM_LAYERS)
-
-    def get_input_spec(
-        self,
-        llm_config: dict,
-        sequence_length: int = DEFAULT_SEQUENCE_LENGTH,
-        context_length: int = DEFAULT_CONTEXT_LENGTH,
-        llm_io_type: LLMIOType = LLMIOType.genie_input_ids,
-    ) -> InputSpec:
-        """
-        Parameters
-        ----------
-        llm_config
-            Model configuration dictionary.
-        sequence_length
-            Sequence length for the model.
-        context_length
-            Context length for the model.
-        llm_io_type
-            Input/output type for the LLM.
-
-        Returns
-        -------
-        InputSpec
-            Input specification for the model.
-        """
-        return Llama3Base._get_input_spec(
-            num_hidden_layers=llm_config["num_hidden_layers"],
-            sequence_length=sequence_length,
-            context_length=context_length,
-            hidden_size=llm_config["hidden_size"],
-            num_key_value_heads=llm_config["num_key_value_heads"],
-            num_attention_heads=llm_config["num_attention_heads"],
-            llm_io_type=llm_io_type,
-        )
+        super().__init__(checkpoint, *args, **kwargs)
+        # Extend the embedding table with the SSD forecast token embeddings.
+        append_ssd_forecast_embeddings(self.model, self._ssd_forecast_ckpt())
 
 
-class Llama3_2_3B_SSD_QNN(Llama3Base_QNN):
-    num_layers_per_split: int = NUM_LAYERS_PER_SPLIT
+class Llama3_2_3B_SSD_QuantizablePreSplit(  # type: ignore[misc]
+    LLMDynamic_SSD_AIMETOnnx,
+    LlamaQuantizablePreSplitBase[Llama3_2_3B_SSD_PreSplit],
+):
+    """Quantizable PreSplit for Llama 3.2 3B with SSD genie-asset support."""
 
-    def get_output_spec(self) -> OutputSpec:
-        return Llama3Base._get_output_spec(NUM_LAYERS)
+    FPModel = Llama3_2_3B_SSD_PreSplit
+    GeneratorClass = HubCompatibleGenerator
 
-    def get_input_spec(
-        self,
-        llm_config: dict,
-        sequence_length: int = DEFAULT_SEQUENCE_LENGTH,
-        context_length: int = DEFAULT_CONTEXT_LENGTH,
-        llm_io_type: LLMIOType = LLMIOType.genie_input_ids,
-    ) -> InputSpec:
-        return Llama3Base._get_input_spec(
-            num_hidden_layers=llm_config["num_hidden_layers"],
-            sequence_length=sequence_length,
-            context_length=context_length,
-            hidden_size=llm_config["hidden_size"],
-            num_key_value_heads=llm_config["num_key_value_heads"],
-            num_attention_heads=llm_config["num_attention_heads"],
-            llm_io_type=llm_io_type,
-        )
+    model_id = MODEL_ID
+    model_asset_version = MODEL_ASSET_VERSION
+    num_layers = NUM_LAYERS
+    supported_precisions = SUPPORTED_PRECISIONS
+    split_model_name = SPLIT_MODEL_NAME
+    num_splits = NUM_SPLITS
+    num_layers_per_split = NUM_LAYERS_PER_SPLIT
+    split_lm_head = True
+    default_checkpoint = DEFAULT_CHECKPOINT
+    default_precision = DEFAULT_PRECISION
+
+
+class Llama3_2_3B_SSD_PartBase(LlamaPartBase):
+    """Unified Part base for Llama 3.2 3B SSD."""
+
+    num_splits = NUM_SPLITS
+    hidden_size = HIDDEN_SIZE
+    num_attention_heads = NUM_ATTN_HEADS
+    num_key_value_heads = NUM_KEY_VALUE_HEADS
+    fp_presplit_cls = Llama3_2_3B_SSD_PreSplit
+    quant_presplit_cls = Llama3_2_3B_SSD_QuantizablePreSplit
+    default_precision = DEFAULT_PRECISION
+
+
+class Llama3_2_3B_SSD_Part1_Of_4(Llama3_2_3B_SSD_PartBase):
+    """Part 1: Embedding."""
+
+    part_id = 1
+
+
+class Llama3_2_3B_SSD_Part2_Of_4(Llama3_2_3B_SSD_PartBase):
+    """Part 2: Middle layers."""
+
+    part_id = 2
+
+
+class Llama3_2_3B_SSD_Part3_Of_4(Llama3_2_3B_SSD_PartBase):
+    """Part 3: Middle layers."""
+
+    part_id = 3
+
+
+class Llama3_2_3B_SSD_Part4_Of_4(Llama3_2_3B_SSD_PartBase):
+    """Part 4: Final layers + LM head."""
+
+    part_id = 4
+
+
+_SPLIT_PART_CLASSES: list[type] = [
+    Llama3_2_3B_SSD_Part1_Of_4,
+    Llama3_2_3B_SSD_Part2_Of_4,
+    Llama3_2_3B_SSD_Part3_Of_4,
+    Llama3_2_3B_SSD_Part4_Of_4,
+]
+
+
+class QuantizedSplitModelWrapper(  # type: ignore[misc]
+    SplitForwardMixin, Llama3_2_3B_SSD_QuantizablePreSplit
+):
+    """Quantized eval via split Parts instead of monolithic QuantSim."""
+
+    def get_split_part_classes(self) -> list[type]:
+        return _SPLIT_PART_CLASSES
+
+
+class FPSplitModelWrapper(SplitForwardMixin, Llama3_2_3B_SSD_PreSplit):
+    """FP eval via split Parts instead of monolithic torch model."""
+
+    def get_split_part_classes(self) -> list[type]:
+        return _SPLIT_PART_CLASSES
+
+
+class Llama3_2_3B_SSD_Collection(LlamaPreSplitCollectionBase):
+    """Unified Collection with 4 Parts for Llama 3.2 3B SSD."""
+
+    hf_repo_name = HF_REPO_NAME
+    fp_presplit_cls = Llama3_2_3B_SSD_PreSplit
+    part_base_cls = Llama3_2_3B_SSD_PartBase
+    parts = {
+        "part1_of_4": Llama3_2_3B_SSD_Part1_Of_4,
+        "part2_of_4": Llama3_2_3B_SSD_Part2_Of_4,
+        "part3_of_4": Llama3_2_3B_SSD_Part3_Of_4,
+        "part4_of_4": Llama3_2_3B_SSD_Part4_Of_4,
+    }

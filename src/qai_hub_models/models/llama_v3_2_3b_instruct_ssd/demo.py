@@ -8,24 +8,21 @@ from __future__ import annotations
 from qai_hub_models.models._shared.llama3.model import END_TOKENS
 from qai_hub_models.models._shared.llm.demo import llm_chat_demo
 from qai_hub_models.models._shared.llm.model import LLM_QNN, LLM_AIMETOnnx, LLMBase
-from qai_hub_models.models.llama_v3_2_3b_instruct_ssd import (
-    MODEL_ID,
-    FP_Model,
-    Model,
-    QNN_Model,
-)
 from qai_hub_models.models.llama_v3_2_3b_instruct_ssd.model import (
     HF_REPO_NAME,
     HF_REPO_URL,
+    MODEL_ID,
     SUPPORTED_PRECISIONS,
+    Llama3_2_3B_SSD_PreSplit,
+    QuantizedSplitModelWrapper,
 )
 from qai_hub_models.utils.checkpoint import CheckpointSpec
 
 
 def llama_3_2_3b_chat_demo(
-    model_cls: type[LLM_AIMETOnnx] = Model,
-    fp_model_cls: type[LLMBase] = FP_Model,
-    qnn_model_cls: type[LLM_QNN] = QNN_Model,
+    model_cls: type[LLM_AIMETOnnx] = QuantizedSplitModelWrapper,
+    fp_model_cls: type[LLMBase] = Llama3_2_3B_SSD_PreSplit,
+    qnn_model_cls: type[LLM_QNN] = LLM_QNN,
     model_id: str = MODEL_ID,
     end_tokens: set = END_TOKENS,
     hf_repo_name: str = HF_REPO_NAME,
