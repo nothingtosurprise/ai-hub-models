@@ -19,7 +19,10 @@ from qai_hub_models_cli.proto.shared.precision_pb2 import Precision
 from qai_hub_models_cli.proto.shared.range_pb2 import DoubleRange, IntRange
 from qai_hub_models_cli.proto.shared.runtime_pb2 import Runtime
 from qai_hub_models_cli.proto.shared.tool_versions_pb2 import ToolVersions
-from qai_hub_models_cli.proto_helpers.numerics import filter_numerics
+from qai_hub_models_cli.proto_helpers.numerics import (
+    filter_numerics,
+    format_numerics_table,
+)
 from qai_hub_models_cli.proto_helpers.perf import filter_perf, format_perf_table
 
 
@@ -119,12 +122,15 @@ def _numerics() -> ModelNumerics:
                         precision=Precision.PRECISION_FLOAT,
                         runtime=Runtime.RUNTIME_TFLITE,
                         partial_metric=71.5,
+                        # Cross-referenced from the matching perf record.
+                        tool_versions=ToolVersions(tflite="2.16"),
                     ),
                     ModelNumerics.NumericsMetric.DeviceNumericsMetrics(
                         device="Samsung Galaxy S23",
                         precision=Precision.PRECISION_W8A8,
                         runtime=Runtime.RUNTIME_QNN_DLC,
                         partial_metric=70.9,
+                        tool_versions=ToolVersions(qairt="2.31"),
                     ),
                 ],
             ),
@@ -176,6 +182,20 @@ def test_numerics_filter() -> None:
     results = [dm for m in filtered.metrics for dm in m.device_metrics]
     assert len(results) == 1
     assert results[0].device == "Samsung Galaxy S24"
+
+
+def test_numerics_sdk_version_filter() -> None:
+    # SDK versions are cross-referenced onto numerics at build time, so numerics
+    # filters on its own tool_versions (no perf needed).
+    filtered = filter_numerics(_numerics(), _platform(), sdk_versions={"qairt": "2.31"})
+    results = [dm for m in filtered.metrics for dm in m.device_metrics]
+    assert [dm.device for dm in results] == ["Samsung Galaxy S23"]
+
+
+def test_numerics_table_includes_sdk_versions() -> None:
+    table = format_numerics_table(_numerics())
+    assert "SDK Versions" in table
+    assert "TFLite 2.16" in table and "QAIRT 2.31" in table
 
 
 def test_footer(capsys: pytest.CaptureFixture[str]) -> None:

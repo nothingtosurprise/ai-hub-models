@@ -195,7 +195,8 @@ def _build_model_protos(
     if numerics is not None:
         written.extend(
             _write_proto_multi(
-                numerics.to_proto(aihm_version, model_id),
+                # Pass perf so numerics device metrics borrow its tool versions.
+                numerics.to_proto(aihm_version, model_id, perf=perf),
                 output_dir / "numerics",
                 fmts,
             )

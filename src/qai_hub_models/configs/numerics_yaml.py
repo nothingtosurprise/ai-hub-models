@@ -10,14 +10,49 @@ from pathlib import Path
 
 from pydantic import Field
 from qai_hub_models_cli.proto import numerics_pb2
-from qai_hub_models_cli.proto.shared import range_pb2
+from qai_hub_models_cli.proto.shared import range_pb2, tool_versions_pb2
 
 from qai_hub_models import Precision
+from qai_hub_models.configs.perf_yaml import QAIHMModelPerf
 from qai_hub_models.configs.proto_helpers import precision_to_proto, runtime_to_proto
 from qai_hub_models.scorecard import ScorecardProfilePath
 from qai_hub_models.scorecard.device import ScorecardDevice
 from qai_hub_models.utils.base_config import BaseQAIHMConfig
 from qai_hub_models.utils.path_helpers import QAIHM_MODELS_ROOT
+
+# Key identifying a measured path, shared by perf and numerics: a numerics result
+# and a perf record describe the same measurement when these three match.
+_PathKey = tuple[str, int, int]
+
+
+def _perf_tool_versions_by_path(
+    perf: QAIHMModelPerf | None,
+) -> dict[_PathKey, tool_versions_pb2.ToolVersions]:
+    """Map each perf entry's (device, precision, runtime) to its tool versions.
+
+    Numerics is produced without tool-version info, so it borrows the versions
+    from the matching perf record when building the release proto.
+    """
+    if perf is None:
+        return {}
+    versions: dict[_PathKey, tool_versions_pb2.ToolVersions] = {}
+
+    def _collect(
+        precision: Precision,
+        component: str,
+        device: ScorecardDevice,
+        path: ScorecardProfilePath,
+        details: QAIHMModelPerf.PerformanceDetails,
+    ) -> None:
+        key = (
+            str(device),
+            precision_to_proto(precision),
+            runtime_to_proto(path.runtime),
+        )
+        versions[key] = details.tool_versions.to_proto()
+
+    perf.for_each_entry(_collect)
+    return versions
 
 
 def get_numerics_yaml_path(model_id: str) -> Path:
@@ -65,7 +100,15 @@ class QAIHMModelNumerics(BaseQAIHMConfig):
     def is_empty(self) -> bool:
         return len(self.metrics) == 0
 
-    def to_proto(self, aihm_version: str, model_id: str) -> numerics_pb2.ModelNumerics:
+    def to_proto(
+        self,
+        aihm_version: str,
+        model_id: str,
+        perf: QAIHMModelPerf | None = None,
+    ) -> numerics_pb2.ModelNumerics:
+        # SDK/tool versions aren't stored in numerics; cross-reference them from
+        # the matching perf record (same device/precision/runtime), when given.
+        tool_versions_by_path = _perf_tool_versions_by_path(perf)
         metrics: list[numerics_pb2.ModelNumerics.NumericsMetric] = []
         for m in self.metrics:
             device_metrics: list[
@@ -74,12 +117,18 @@ class QAIHMModelNumerics(BaseQAIHMConfig):
             for device, prec_dict in m.device_metric.items():
                 for precision, path_dict in prec_dict.items():
                     for path, details in path_dict.items():
+                        precision_proto = precision_to_proto(precision)
+                        runtime_proto = runtime_to_proto(path.runtime)
+                        tool_versions = tool_versions_by_path.get(
+                            (str(device), precision_proto, runtime_proto)
+                        )
                         device_metrics.append(
                             numerics_pb2.ModelNumerics.NumericsMetric.DeviceNumericsMetrics(
                                 device=str(device),
-                                precision=precision_to_proto(precision),
-                                runtime=runtime_to_proto(path.runtime),
+                                precision=precision_proto,
+                                runtime=runtime_proto,
                                 partial_metric=details.partial_metric,
+                                tool_versions=tool_versions,
                             )
                         )
 

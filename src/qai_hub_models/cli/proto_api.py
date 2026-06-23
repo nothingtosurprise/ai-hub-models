@@ -79,7 +79,9 @@ def get_numerics_proto(model_id: str) -> ModelNumerics:
     """Build a ModelNumerics proto from local model config (dev installs)."""
     numerics = QAIHMModelNumerics.from_model(model_id, not_exists_ok=True)
     if numerics:
-        return numerics.to_proto(__version__, model_id)
+        # Cross-reference SDK/tool versions from perf (same as the release build).
+        perf = QAIHMModelPerf.from_model(model_id, not_exists_ok=True)
+        return numerics.to_proto(__version__, model_id, perf=perf)
     return ModelNumerics()
 
 

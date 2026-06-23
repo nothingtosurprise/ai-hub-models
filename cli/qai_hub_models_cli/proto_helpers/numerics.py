@@ -21,6 +21,10 @@ from qai_hub_models_cli.proto_helpers.platform_enums import (
     runtime_proto_to_str,
     runtimes_str_to_proto_set,
 )
+from qai_hub_models_cli.proto_helpers.release_assets import (
+    format_tool_versions,
+    tool_versions_match,
+)
 from qai_hub_models_cli.utils import build_table
 from qai_hub_models_cli.versions import CURRENT_VERSION
 
@@ -78,6 +82,7 @@ def filter_numerics(
     | None = None,
     chipset: str | list[str] | None = None,
     device: str | list[str] | None = None,
+    sdk_versions: dict[str, str] | None = None,
 ) -> ModelNumerics:
     """
     Return a copy of *numerics* keeping only per-device results matching the filters.
@@ -107,6 +112,11 @@ def filter_numerics(
     device
         Device name to filter on, or a list of them. Mutually exclusive with
         *chipset*.
+    sdk_versions
+        Map of tool name to version substring (see
+        :func:`parse_sdk_version_filters`). A result must match every entry; its
+        tool versions are cross-referenced from perf at build time (empty for
+        older releases, which then never match an SDK filter).
 
     Returns
     -------
@@ -135,6 +145,9 @@ def filter_numerics(
             if (runtime_vals is None or dm.runtime in runtime_vals)
             and (precision_vals is None or dm.precision in precision_vals)
             and (device_names is None or dm.device.lower() in device_names)
+            and (
+                not sdk_versions or tool_versions_match(dm.tool_versions, sdk_versions)
+            )
         ]
         if not matching:
             continue
@@ -152,7 +165,9 @@ def format_numerics_table(
     """Format a model's numerical accuracy metrics as a table.
 
     One row per (metric, device result). The torch reference value for each
-    metric is shown alongside each on-device value for comparison.
+    metric is shown alongside each on-device value for comparison. The SDK
+    Versions column is sourced from each result's tool versions (cross-referenced
+    from perf at build time).
 
     Returns a message string when *numerics* has no per-device results.
     """
@@ -164,6 +179,7 @@ def format_numerics_table(
         "Device",
         "Accuracy",
         "Torch Ref",
+        "SDK Versions",
     ]
 
     rows = [
@@ -175,6 +191,7 @@ def format_numerics_table(
             dm.device,
             f"{dm.partial_metric:.3g}{metric.metric_unit}",
             f"{metric.partial_torch_metric:.3g}{metric.metric_unit}",
+            format_tool_versions(dm.tool_versions),
         ]
         for metric in numerics.metrics
         for dm in metric.device_metrics

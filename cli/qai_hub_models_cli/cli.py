@@ -429,6 +429,16 @@ def _add_model_metric_filter_args(parser: argparse.ArgumentParser) -> None:
         "Run `qai-hub-models devices` to see supported devices. "
         "Cannot be combined with --chipset.",
     )
+    parser.add_argument(
+        "-s",
+        "--sdk-version",
+        nargs="+",
+        default=None,
+        type=str.lower,
+        help="Filter by SDK/tool version using 'tool=version' syntax (e.g. "
+        "'litert=1.4.4' or 'qairt=2.20'). Accepts multiple values; a record "
+        "must match all of them.",
+    )
 
 
 def _print_model_metric_footer(command: str, args: argparse.Namespace) -> None:
@@ -448,10 +458,10 @@ def _print_model_metric_footer(command: str, args: argparse.Namespace) -> None:
         chipsets=_flatten_multi_arg(args.chipset),
         devices=_flatten_multi_arg(args.device),
     )
-    # The component and sdk-version filters are perf-only.
+    # The component filter is perf-only; sdk-version applies to both commands.
     for comp in _flatten_multi_arg(getattr(args, "component", None)) or []:
         filter_cmd += f" --component '{comp}'"
-    for query in getattr(args, "sdk_version", None) or []:
+    for query in args.sdk_version or []:
         filter_cmd += f" -s '{query}'"
 
     # Cross-link to the sibling metric command (perf <-> numerics).
@@ -510,16 +520,6 @@ def add_perf_parser(subparsers: argparse._SubParsersAction) -> argparse.Argument
     )
     _add_model_metric_filter_args(parser)
     parser.add_argument(
-        "-s",
-        "--sdk-version",
-        nargs="+",
-        default=None,
-        type=str.lower,
-        help="Filter by SDK/tool version using 'tool=version' syntax (e.g. "
-        "'litert=1.4.4' or 'qairt=2.20'). Accepts multiple values; a record "
-        "must match all of them.",
-    )
-    parser.add_argument(
         "--component",
         nargs="+",
         action="append",
@@ -541,6 +541,7 @@ def _run_numerics(args: argparse.Namespace) -> None:
         precision=_flatten_multi_arg(args.precision),
         chipset=_flatten_multi_arg(args.chipset),
         device=_flatten_multi_arg(args.device),
+        sdk_versions=parse_sdk_version_filters(args.sdk_version or []),
     )
     print(format_numerics_table(numerics))
     if numerics.metrics:
@@ -555,7 +556,7 @@ def add_numerics_parser(
         help="Show a model's accuracy metrics.",
         description="Display per-device numerical accuracy metrics for a model, "
         "alongside the torch reference value. The runtime, precision, chipset, "
-        "and device args act as filters.",
+        "device, and sdk-version args act as filters.",
     )
     parser.add_argument(
         "model", type=str.lower, help="Model ID or display name (e.g. mobilenet_v2)."

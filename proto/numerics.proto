@@ -9,6 +9,7 @@ package qaihm;
 import "shared/range.proto";
 import "shared/precision.proto";
 import "shared/runtime.proto";
+import "shared/tool_versions.proto";
 
 // Expected accuracy benchmark for a model on a specific dataset/metric.
 // Used in info.yaml to set the expected value scorecard checks against.
@@ -63,6 +64,13 @@ message ModelNumerics {
       Precision precision = 2;
       Runtime runtime = 3;
       double partial_metric = 4;
+
+      // The tool versions used to generate this result. Cross-referenced from
+      // the matching perf record (same device/precision/runtime) at build time,
+      // since numerics is produced without tool-version info of its own.
+      //
+      // Unset in numerics protos from releases before 0.57.0.
+      ToolVersions tool_versions = 5;
     }
   }
 }

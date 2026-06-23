@@ -253,7 +253,7 @@ class TestNumericsFieldCoverage:
         _check_coverage(
             QAIHMModelNumerics.DeviceDetails,
             numerics_pb2.ModelNumerics.NumericsMetric.DeviceNumericsMetrics.DESCRIPTOR,
-            proto_only={"device", "precision", "runtime"},
+            proto_only={"device", "precision", "runtime", "tool_versions"},
         )
 
 

@@ -19,6 +19,7 @@ import google.protobuf.message
 import shared.precision_pb2
 import shared.range_pb2
 import shared.runtime_pb2
+import shared.tool_versions_pb2
 import typing
 
 DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
@@ -75,10 +76,20 @@ class ModelNumerics(google.protobuf.message.Message):
             PRECISION_FIELD_NUMBER: builtins.int
             RUNTIME_FIELD_NUMBER: builtins.int
             PARTIAL_METRIC_FIELD_NUMBER: builtins.int
+            TOOL_VERSIONS_FIELD_NUMBER: builtins.int
             device: builtins.str
             precision: shared.precision_pb2.Precision.ValueType
             runtime: shared.runtime_pb2.Runtime.ValueType
             partial_metric: builtins.float
+            @property
+            def tool_versions(self) -> shared.tool_versions_pb2.ToolVersions:
+                """The tool versions used to generate this result. Cross-referenced from
+                the matching perf record (same device/precision/runtime) at build time,
+                since numerics is produced without tool-version info of its own.
+
+                Unset in numerics protos from releases before 0.57.0.
+                """
+
             def __init__(
                 self,
                 *,
@@ -86,8 +97,10 @@ class ModelNumerics(google.protobuf.message.Message):
                 precision: shared.precision_pb2.Precision.ValueType = ...,
                 runtime: shared.runtime_pb2.Runtime.ValueType = ...,
                 partial_metric: builtins.float = ...,
+                tool_versions: shared.tool_versions_pb2.ToolVersions | None = ...,
             ) -> None: ...
-            def ClearField(self, field_name: typing.Literal["device", b"device", "partial_metric", b"partial_metric", "precision", b"precision", "runtime", b"runtime"]) -> None: ...
+            def HasField(self, field_name: typing.Literal["tool_versions", b"tool_versions"]) -> builtins.bool: ...
+            def ClearField(self, field_name: typing.Literal["device", b"device", "partial_metric", b"partial_metric", "precision", b"precision", "runtime", b"runtime", "tool_versions", b"tool_versions"]) -> None: ...
 
         DATASET_NAME_FIELD_NUMBER: builtins.int
         DATASET_LINK_FIELD_NUMBER: builtins.int
