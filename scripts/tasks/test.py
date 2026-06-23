@@ -742,7 +742,21 @@ class CollectLLMPerfTask(CompositeTask):
             f" {home_dir}/.qaihm/models/* {tmp_dir}/*"
         )
 
+        refresh_aws_creds_script = os.path.join(
+            REPO_ROOT, "scripts", "ci", "refresh_aws_creds.sh"
+        )
+        refresh_aws_creds_enabled = bool(os.environ.get("AWS_ROLE_ARN"))
+
         for model_name in models_to_test:
+            if refresh_aws_creds_enabled:
+                tasks.append(
+                    RunCommandsTask(
+                        f"Refresh AWS Credentials Before Model {model_name}",
+                        f"bash '{refresh_aws_creds_script}'",
+                        raise_on_failure=True,
+                        retries=2,
+                    )
+                )
             model_venv = os.path.join(home_dir, "model_envs", model_name)
 
             # Create per-model venv and install QAIHM + model requirements.
