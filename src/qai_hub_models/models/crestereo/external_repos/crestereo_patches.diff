@@ -1,17 +1,18 @@
-# Replaces einsum and 5D reshape ops with QNN-compatible alternatives and rewrites convex_upsample for export.
+# Replaces einsum and 5D reshape ops with QNN-compatible alternatives, rewrites convex_upsample for export,
+# and replaces the custom bilinear_grid_sample with F.grid_sample (bilinear) which QNN maps natively
+# to its own grid sampler op — single call, no int64 indices, compatible with QNN HTP and TFLite.
 #
 diff --git a/nets/attention/linear_attention.py b/nets/attention/linear_attention.py
-index 61b1b85..927050c 100644
+index 61b1b85..2f7784d 100644
 --- a/nets/attention/linear_attention.py
 +++ b/nets/attention/linear_attention.py
-@@ -78,4 +78,56 @@ class FullAttention(Module):
+@@ -78,4 +78,54 @@ class FullAttention(Module):
  
          queried_values = torch.einsum("nlsh,nshd->nlhd", A, values)
  
 -        return queried_values.contiguous()
 \ No newline at end of file
 +        return queried_values.contiguous()
-+
 +# ---------------------------------------------------------------------------
 +# Qualcomm-compatible replacement
 +# ---------------------------------------------------------------------------
@@ -34,7 +35,6 @@ index 61b1b85..927050c 100644
 +    Q = self.feature_map(queries)
 +    K = self.feature_map(keys)
 +
-+    # Zero out padded positions.
 +    if q_mask is not None:
 +        Q = Q * q_mask[:, :, None, None]
 +    if kv_mask is not None:
@@ -64,10 +64,47 @@ index 61b1b85..927050c 100644
 +
 +LinearAttention.forward = _linear_attention_forward
 diff --git a/nets/corr.py b/nets/corr.py
-index bf0e286..eec1fab 100644
+index bf0e286..31a8a6d 100644
 --- a/nets/corr.py
 +++ b/nets/corr.py
-@@ -146,3 +146,76 @@ class AGCL:
+@@ -3,7 +3,12 @@ import torch
+ import torch.nn as nn
+ import torch.nn.functional as F
+ 
+-from .utils import bilinear_sampler, coords_grid, manual_pad
++from .utils import (
++    bilinear_sampler,
++    bilinear_sampler_int_frac,
++    coords_grid,
++    manual_pad,
++)
+ 
+ class AGCL:
+     """
+@@ -50,9 +55,19 @@ class AGCL:
+ 
+     def corr_iter(self, left_feature, right_feature, flow, small_patch):
+ 
+-        coords = self.coords + flow
+-        coords = coords.permute(0, 2, 3, 1)
+-        right_feature = bilinear_sampler(right_feature, coords)
++        # -- Begin Qualcomm Change
++        # bilinear_sampler_int_frac keeps the integer base and fractional flow
++        # separate so fp16 NPUs do not lose sub-pixel precision at large coords.
++        # On CPU/GPU inference fall back to the original fast single-call sampler.
++        if torch.jit.is_tracing():
++            base = self.coords.permute(0, 2, 3, 1)
++            flow_nhwc = flow.permute(0, 2, 3, 1)
++            right_feature = bilinear_sampler_int_frac(right_feature, base, flow_nhwc)
++        else:
++            coords = self.coords + flow
++            coords = coords.permute(0, 2, 3, 1)
++            right_feature = bilinear_sampler(right_feature, coords)
++        # -- End Qualcomm Change
+ 
+         if small_patch:
+             psize_list = [(3, 3), (3, 3), (3, 3), (3, 3)]
+@@ -146,3 +161,84 @@ class AGCL:
          final_corr = torch.cat(corrs, dim=1)
  
          return final_corr
@@ -81,11 +118,20 @@ index bf0e286..eec1fab 100644
 +def _corr_att_offset(self, left_feature, right_feature, flow, extra_offset, small_patch=False):
 +    """Compute attention-guided offset correlation.
 +
-+    Replaces the original implementation to avoid export-unfriendly ops:
-+    - repeat_interleave on offsets (runtime-dependent count).
++    -- Begin Qualcomm Change
++    On CPU/GPU inference delegates to the original implementation.
++    During export (tracing) replaces the original to avoid:
++    - repeat_interleave on offsets (runtime-dependent count, not exportable).
 +    - 5D tensor reshape [N, C, -1, H, W] unsupported by QNN.
 +    - repeat_interleave on left_feature.
++    Uses bilinear_sampler_int_frac for fp16-safe coordinate sampling on NPU.
++    -- End Qualcomm Change
 +    """
++    # -- Begin Qualcomm Change
++    if not torch.jit.is_tracing():
++        return _corr_att_offset_original(self, left_feature, right_feature, flow, extra_offset, small_patch)
++    # -- End Qualcomm Change
++
 +    N, C, H, W = left_feature.shape
 +
 +    if self.att is not None:
@@ -125,14 +171,12 @@ index bf0e286..eec1fab 100644
 +        offsets = offsets.reshape(2, -1).permute(1, 0)
 +        for d in sorted((0, 2, 3)):
 +            offsets = offsets.unsqueeze(d)
-+        offsets = offsets + extra_offset
 +
-+        coords = self.coords + flow
-+        coords = coords.permute(0, 2, 3, 1)
-+        coords = torch.unsqueeze(coords, 1) + offsets
-+        coords = coords.reshape(N, -1, W, 2)
-+
-+        right_feature = bilinear_sampler(right_feature, coords)
++        base = self.coords.permute(0, 2, 3, 1)  # [N, H, W, 2], integer-valued
++        base = (torch.unsqueeze(base, 1) + offsets.float()).reshape(N, -1, W, 2)
++        frac = flow.permute(0, 2, 3, 1)
++        frac = (torch.unsqueeze(frac, 1) + extra_offset).reshape(N, -1, W, 2)
++        right_feature = bilinear_sampler_int_frac(right_feature, base, frac)
 +        # Reshape to [N*C, search_num, H, W] to avoid the 5D tensor.
 +        right_feature = right_feature.reshape(N * C, -1, H, W)
 +        # Transpose left_feature to [C*N, H, W] then unsqueeze to align.
@@ -143,12 +187,13 @@ index bf0e286..eec1fab 100644
 +    return torch.cat(corrs, dim=1)
 +
 +
++_corr_att_offset_original = AGCL.corr_att_offset
 +AGCL.corr_att_offset = _corr_att_offset
 diff --git a/nets/crestereo.py b/nets/crestereo.py
-index 3f99917..2792fdb 100644
+index 3f99917..fb06385 100644
 --- a/nets/crestereo.py
 +++ b/nets/crestereo.py
-@@ -55,24 +55,44 @@ class CREStereo(nn.Module):
+@@ -55,24 +55,47 @@ class CREStereo(nn.Module):
          self.range_16 = 1
          self.range_8 = 1
  
@@ -186,6 +231,9 @@ index 3f99917..2792fdb 100644
 +            mask.permute(0, 2, 3, 1).view(N, H * W, 9, rate * rate).permute(0, 1, 3, 2)
 +        )  # [N, H*W, rate*rate, 9]
 +        mask = torch.softmax(mask, dim=-1)
++        # Expand mask from [N, H*W, rate*rate, 9] to [N*2, H*W, rate*rate, 9]
++        # to match up_flow which is indexed over the 2 flow channels (x, y).
++        mask = mask.repeat_interleave(2, dim=0)
 +        # Gather the 9-neighbourhood for every flow pixel via conv2d
 +        up_flow = (
 +            F.conv2d(
@@ -197,18 +245,48 @@ index 3f99917..2792fdb 100644
 +            .view(N * 2, H * W, 1, 9)
 +        )
 +        # Weighted sum over neighbours
-+        up_flow = (mask * up_flow).sum(dim=-1)  # broadcast N*2 over N
++        up_flow = (mask * up_flow).sum(dim=-1)  # [N*2, H*W, rate*rate]
 +        # Fold back to spatial layout
 +        up_flow = up_flow.reshape(N * 2, H, W, rate, rate).permute(0, 1, 3, 2, 4)
 +        return up_flow.reshape(N, 2, rate * H, rate * W)
  
      def zero_init(self, fmap):
          N, C, H, W = fmap.shape
+diff --git a/nets/utils/__init__.py b/nets/utils/__init__.py
+index 8cc08e5..c441912 100644
+--- a/nets/utils/__init__.py
++++ b/nets/utils/__init__.py
+@@ -1 +1,6 @@
+-from .utils import bilinear_sampler, coords_grid, manual_pad
+\ No newline at end of file
++from .utils import (
++    bilinear_sampler,
++    bilinear_sampler_int_frac,
++    coords_grid,
++    manual_pad,
++)
 diff --git a/nets/utils/utils.py b/nets/utils/utils.py
-index 3a28205..4e8a236 100644
+index 3a28205..60d896b 100644
 --- a/nets/utils/utils.py
 +++ b/nets/utils/utils.py
-@@ -5,21 +5,17 @@ import numpy as np
+@@ -2,25 +2,36 @@ import torch
+ import torch.nn.functional as F
+ import numpy as np
+ 
++def bilinear_sampler_int_frac(img, base, flow):
++    """Bilinear sampling using F.grid_sample on combined base+flow coordinates.
++
++    Single F.grid_sample call — QNN maps this natively to its own grid sampler
++    op with no int64 indices, making it compatible with TFLite and QNN HTP.
++    """
++    H, W = img.shape[-2:]
++    coords = base + flow
++    xn = coords[..., 0:1] * (2.0 / (W - 1)) - 1.0
++    yn = coords[..., 1:2] * (2.0 / (H - 1)) - 1.0
++    grid = torch.cat([xn, yn], dim=-1)
++    return F.grid_sample(img, grid, mode='bilinear',
++                         padding_mode='zeros', align_corners=True)
++
  #Ref: https://github.com/princeton-vl/RAFT/blob/master/core/utils/utils.py
  
  def bilinear_sampler(img, coords, mode='bilinear', mask=False):
@@ -229,13 +307,14 @@ index 3a28205..4e8a236 100644
      grid = torch.cat([xgrid, ygrid], dim=-1)
 -    # img = F.grid_sample(img, grid, align_corners=True)
 -    img = bilinear_grid_sample(img, grid, align_corners=True)
--
++    return F.grid_sample(img, grid, align_corners=True)
+ 
 -    if mask:
 -        mask = (xgrid > -1) & (ygrid > -1) & (xgrid < 1) & (ygrid < 1)
 -        return img, mask.float()
--
+ 
 -    return img
-+    return F.grid_sample(img, grid, align_corners=True)
-     
+-    
  def coords_grid(batch, ht, wd, device):
      coords = torch.meshgrid(torch.arange(ht, device=device), torch.arange(wd, device=device), indexing='ij')
+     coords = torch.stack(coords[::-1], dim=0).float()

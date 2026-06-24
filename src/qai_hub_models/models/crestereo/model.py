@@ -99,16 +99,6 @@ class CREStereo(BaseModel):
             return " --truncate_64bit_tensors " + compile_options
         return compile_options
 
-    def get_hub_profile_options(
-        self,
-        target_runtime: TargetRuntime,
-        other_profile_options: str = "",
-    ) -> str:
-        # NPU has accuracy issues; force CPU execution.
-        if "--compute_unit" not in other_profile_options:
-            other_profile_options = f"--compute_unit cpu {other_profile_options}"
-        return super().get_hub_profile_options(target_runtime, other_profile_options)
-
     def get_input_spec(
         self,
         batch_size: int = 1,
