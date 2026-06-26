@@ -180,8 +180,9 @@ jobs:
         source ${{ env.VENV_PATH }}/bin/activate
         pip install -e src/
 
+    # Download even on partial failure, then PR can create even if some benchmarks failed.
     - name: Download geniex perf.yaml update manifest
-      if: ${{ needs.collect_geniex_bench_perf.result == 'success' }}
+      if: ${{ needs.collect_geniex_bench_perf.result != 'cancelled' }}
       uses: actions/download-artifact@v8
       with:
         name: geniex-perf-updates

@@ -410,16 +410,27 @@ def main() -> int:
                                 profile_path = ScorecardProfilePath.GENIEX_QAIRT
                             else:
                                 profile_path = ScorecardProfilePath.GENIEX_LLAMACPP
-                            # ttft_max_ms=ttft_ms: geniex measures TTFT at full ctx.
+                            # Use the same logic as Genie, assume TTFT scales linearly with prompt length.
+                            # Range = [TTFT at 128 tokens, TTFT at full context].
+                            # Genie measures at 128 tokens: min=ttft, max=ttft*(ctx/128).
+                            # Geniex measures at prompt_tokens, same scaling logic:
+                            #   min = ttft * (128 / prompt_tokens)
+                            #   max = ttft * (context_length / prompt_tokens)
+                            assert m.prompt_tokens > 0, (
+                                f"prompt_tokens must be > 0 for TTFT range "
+                                f"scaling, got {m.prompt_tokens}"
+                            )
+                            ttft_min = m.ttft_ms * (128 / m.prompt_tokens)
+                            ttft_max = m.ttft_ms * (m.context_length / m.prompt_tokens)
                             update_kwargs = dict(
                                 model_id=model_id,
                                 device_name=sd.reference_device_name,
                                 precision=str(precision),
                                 context_length=m.context_length,
                                 tps=m.decode_tps,
-                                ttft_ms=m.ttft_ms,
+                                ttft_ms=ttft_min,
                                 prefill_tps=m.prefill_tps,
-                                ttft_max_ms=m.ttft_ms,
+                                ttft_max_ms=ttft_max,
                                 profile_path=profile_path.value,
                                 desired_compute_unit=m.device_alias,
                             )
@@ -430,9 +441,9 @@ def main() -> int:
                                 precision=precision,
                                 context_length=m.context_length,
                                 tps=m.decode_tps,
-                                ttft_ms=m.ttft_ms,
+                                ttft_ms=ttft_min,
                                 prefill_tps=m.prefill_tps,
-                                ttft_max_ms=m.ttft_ms,
+                                ttft_max_ms=ttft_max,
                                 profile_path=profile_path,
                                 desired_compute_unit=m.device_alias,
                             )

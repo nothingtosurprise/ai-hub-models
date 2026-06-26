@@ -2,4 +2,4 @@ precisions:
   q4_0:
     universal_assets:
       geniex_llamacpp:
-        download_url: https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_0.gguf
+        download_url: https://huggingface.co/google/gemma-4-E4B-it-qat-q4_0-gguf/resolve/main/gemma-4-E4B_q4_0-it.gguf
