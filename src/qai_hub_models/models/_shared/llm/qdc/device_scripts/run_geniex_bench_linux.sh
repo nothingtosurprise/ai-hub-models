@@ -4,9 +4,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
 
-set -e
-# pipefail so the `tee` below doesn't mask geniex-bench failures.
-set -o pipefail
+set +e
+umask 022
 
 LOG=/data/local/tmp/QDC_logs
 OUT=$LOG/results
@@ -14,8 +13,11 @@ MM_CACHE=/data/local/tmp/geniex-cache
 TC=/data/local/tmp/TestContent
 
 mkdir -p "$LOG" "$OUT" "$MM_CACHE"
-# Tee to log + stdout so progress stays visible when QDC log upload fails.
-exec > >(tee "$LOG/script.log") 2>&1
+# Keep stdout off the SSH channel: `exec > >(tee ...) 2>&1` lets the process
+# substitution stall the channel until its 4 KiB stdout buffer fills, then
+# QDC's pyshell-bash-ssh runner trips sshd's ClientAliveInterval=15/CountMax=4
+# (~73s) and tears the session down mid-cell. File-only redirect avoids it.
+exec > "$LOG/script.log" 2>&1
 date -u
 uname -a
 
@@ -72,16 +74,23 @@ done <<'EOF'
 {MODELS}
 EOF
 
+failed_ctxs=""
 # shellcheck disable=SC2043
 for ctx in {CTX_LIST}; do
   tsv="${TSV[$ctx]}"
   echo "=== matrix ctx=$ctx ==="
   cat "$tsv"
   geniex_retry ./bin/geniex-bench --matrix-file "$tsv" --output-json-dir "$OUT" -r 3 \
-    -c "$ctx" {PREFILL_FLAGS} \
+    {BENCH_SIZE_FLAGS} \
     --mm-data-dir "$MM_CACHE" --chipset "{CHIPSET}"
-  echo "rc=$?  ($(ls "$OUT" | wc -l) cell json files so far)"
+  bench_rc=$?
+  echo "rc=$bench_rc  ($(ls "$OUT" | wc -l) cell json files so far)"
+  [ "$bench_rc" -ne 0 ] && failed_ctxs="$failed_ctxs $ctx"
 done
 
 echo "=== done ==="
+if [ -n "$failed_ctxs" ]; then
+  echo "FATAL: geniex-bench failed for context lengths:$failed_ctxs"
+  exit 1
+fi
 exit 0

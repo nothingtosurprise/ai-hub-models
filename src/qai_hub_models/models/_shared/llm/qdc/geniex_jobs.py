@@ -22,14 +22,20 @@ from qai_hub_models.models._shared.llm.qdc.qdc_jobs import (
 GENIEX_BENCH_JOB_TIMEOUT = 7200  # 2 hours
 _QDC_EXECUTION_MAX_ATTEMPTS = 2
 
-# Unversioned mirrors refreshed by geniex release workflow on every stable tag.
+# Versioned URLs follow the geniex release workflow's flat S3 layout
+# (<stem>-<vX.Y.Z>.<ext>); the unversioned mirror is refreshed on every
+# stable tag and is used when no version is pinned.
 _S3_BASE = "https://qaihub-public-assets.s3.us-west-2.amazonaws.com/qai-hub-geniex"
-_ANDROID_APK_URL = f"{_S3_BASE}/geniex-demo.apk"
-_ANDROID_BENCH_URL = f"{_S3_BASE}/geniex-bench-android-arm64.tar.gz"
-_LINUX_BENCH_URL = f"{_S3_BASE}/geniex-bench-linux-arm64.tar.gz"
-_WINDOWS_BENCH_URL = f"{_S3_BASE}/geniex-bench-windows-arm64.zip"
+
+
+def _bench_url(platform_stem: str, ext: str, version: str | None) -> str:
+    suffix = f"-{version}" if version else ""
+    return f"{_S3_BASE}/geniex-bench-{platform_stem}{suffix}.{ext}"
+
 
 DEFAULT_CONTEXT_LENGTHS = [512, 1024, 4096]
+
+_N_GEN = 128
 
 
 def _create_zip(zip_path: str, source_dir: os.PathLike | str) -> None:
@@ -65,6 +71,7 @@ class GenieXBenchArtifactHandler(ABC):
         context_lengths: list[int],
         plugin: str,
         qairt_bundles: dict[str, str] | None,
+        geniex_version: str | None,
     ) -> str:
         raise NotImplementedError
 
@@ -122,6 +129,7 @@ class GenieXBenchAndroidArtifactHandler(GenieXBenchArtifactHandler):
         context_lengths: list[int],
         plugin: str,
         qairt_bundles: dict[str, str] | None,
+        geniex_version: str | None,
     ) -> str:
         ds_dir = os.path.join(curr_dirname, "device_scripts")
         pytest_dir = os.path.join(ds_dir, "geniex_pytest")
@@ -132,6 +140,7 @@ class GenieXBenchAndroidArtifactHandler(GenieXBenchArtifactHandler):
                 matrix_rows, qairt_bundles, device_root=self.DEVICE_ROOT
             )
 
+        bench_url = _bench_url("android-arm64", "tar.gz", geniex_version)
         test_folder = os.path.join(dest_dir, "tests")
         os.makedirs(test_folder, exist_ok=True)
         for fn in os.listdir(pytest_dir):
@@ -145,9 +154,9 @@ class GenieXBenchAndroidArtifactHandler(GenieXBenchArtifactHandler):
             if fn.endswith(".py"):
                 content = (
                     content.replace("{CTX_LIST}", ctx_list_str)
-                    .replace("{ANDROID_BENCH_URL}", _ANDROID_BENCH_URL)
-                    .replace("{ANDROID_APK_URL}", _ANDROID_APK_URL)
+                    .replace("{ANDROID_BENCH_URL}", bench_url)
                     .replace("{PLUGIN}", plugin)
+                    .replace("{N_GEN}", str(_N_GEN))
                 )
             out_path = (
                 os.path.join(dest_dir, fn)
@@ -179,12 +188,15 @@ class GenieXBenchLinuxArtifactHandler(GenieXBenchArtifactHandler):
     def entry_script(self) -> str:
         return f"/bin/bash {self.DEVICE_ROOT}/run_geniex_bench_linux.sh"
 
-    def _prefill_flags(self, plugin: str, qairt_bundles: dict[str, str] | None) -> str:
+    def _bench_size_flags(
+        self, plugin: str, qairt_bundles: dict[str, str] | None
+    ) -> str:
         if plugin == "qairt":
             assert qairt_bundles and len(qairt_bundles) == 1
             (name,) = qairt_bundles
-            return f'--prompt-file "{self.DEVICE_ROOT}/qairt_bundles/{name}/sample_prompt.txt"'
-        return '-p "$ctx"'
+            prompt_path = f"{self.DEVICE_ROOT}/qairt_bundles/{name}/sample_prompt.txt"
+            return f'-c "$ctx" -n {_N_GEN} --prompt-file "{prompt_path}"'
+        return f'-c "$((ctx + {_N_GEN}))" -p "$ctx" -n {_N_GEN}'
 
     def create_artifact(
         self,
@@ -195,6 +207,7 @@ class GenieXBenchLinuxArtifactHandler(GenieXBenchArtifactHandler):
         context_lengths: list[int],
         plugin: str,
         qairt_bundles: dict[str, str] | None,
+        geniex_version: str | None,
     ) -> str:
         ds_dir = os.path.join(curr_dirname, "device_scripts")
         sh_src = os.path.join(ds_dir, "run_geniex_bench_linux.sh")
@@ -207,11 +220,17 @@ class GenieXBenchLinuxArtifactHandler(GenieXBenchArtifactHandler):
         with open(sh_src, encoding="utf-8") as f:
             script = f.read()
         script = (
-            script.replace("{LINUX_BENCH_URL}", _LINUX_BENCH_URL)
+            script.replace(
+                "{LINUX_BENCH_URL}",
+                _bench_url("linux-arm64", "tar.gz", geniex_version),
+            )
             .replace("{CHIPSET}", chipset)
             .replace("{MODELS}", "\n".join(matrix_rows))
             .replace("{CTX_LIST}", " ".join(str(c) for c in context_lengths))
-            .replace("{PREFILL_FLAGS}", self._prefill_flags(plugin, qairt_bundles))
+            .replace(
+                "{BENCH_SIZE_FLAGS}",
+                self._bench_size_flags(plugin, qairt_bundles),
+            )
         )
         sh_dest = os.path.join(dest_dir, "run_geniex_bench_linux.sh")
         with open(sh_dest, "w", encoding="utf-8") as f:
@@ -233,15 +252,15 @@ class GenieXBenchWindowsArtifactHandler(GenieXBenchArtifactHandler):
     def entry_script(self) -> str:
         return f"{self.DEVICE_ROOT}\\run_geniex_bench_windows.ps1"
 
-    def _prefill_flags_args(
+    def _bench_size_flags_args(
         self, plugin: str, qairt_bundles: dict[str, str] | None
     ) -> str:
         if plugin == "qairt":
             assert qairt_bundles and len(qairt_bundles) == 1
             (name,) = qairt_bundles
             path = f"{self.DEVICE_ROOT}\\qairt_bundles\\{name}\\sample_prompt.txt"
-            return f'"--prompt-file", "{path}",'
-        return '"-p", "$ctx",'
+            return f'"-c", "$ctx", "-n", "{_N_GEN}", "--prompt-file", "{path}",'
+        return f'"-c", "$($ctx + {_N_GEN})", "-p", "$ctx", "-n", "{_N_GEN}",'
 
     def create_artifact(
         self,
@@ -252,6 +271,7 @@ class GenieXBenchWindowsArtifactHandler(GenieXBenchArtifactHandler):
         context_lengths: list[int],
         plugin: str,
         qairt_bundles: dict[str, str] | None,
+        geniex_version: str | None,
     ) -> str:
         ds_dir = os.path.join(curr_dirname, "device_scripts")
         ps1_src = os.path.join(ds_dir, "run_geniex_bench_windows.ps1")
@@ -264,12 +284,16 @@ class GenieXBenchWindowsArtifactHandler(GenieXBenchArtifactHandler):
         with open(ps1_src, encoding="utf-8") as f:
             script = f.read()
         script = (
-            script.replace("{WINDOWS_BENCH_URL}", _WINDOWS_BENCH_URL)
+            script.replace(
+                "{WINDOWS_BENCH_URL}",
+                _bench_url("windows-arm64", "zip", geniex_version),
+            )
             .replace("{CHIPSET}", chipset)
             .replace("{MODELS}", "\n".join(matrix_rows))
             .replace("{CTX_LIST}", ",".join(str(c) for c in context_lengths))
             .replace(
-                "{PREFILL_FLAGS_ARGS}", self._prefill_flags_args(plugin, qairt_bundles)
+                "{BENCH_SIZE_FLAGS_ARGS}",
+                self._bench_size_flags_args(plugin, qairt_bundles),
             )
         )
         with open(
@@ -312,6 +336,7 @@ class GenieXBenchQDCJobs(QDCJobs):
         plugin: str,
         context_lengths: list[int] = DEFAULT_CONTEXT_LENGTHS,
         qairt_bundles: dict[str, str] | None = None,
+        geniex_version: str | None = None,
     ) -> tuple[list[str], str | None]:
         curr_dirname = os.path.dirname(os.path.abspath(__file__))
         handler = self._get_artifact_handler(qdc_device)
@@ -324,6 +349,7 @@ class GenieXBenchQDCJobs(QDCJobs):
                 context_lengths,
                 plugin,
                 qairt_bundles,
+                geniex_version,
             )
             artifact = self.upload_file(zip_path, ArtifactType.TESTSCRIPT)
         return [artifact], handler.entry_script
@@ -414,21 +440,15 @@ class GenieXBenchQDCJobs(QDCJobs):
         )
 
 
-def _hf_repo_and_quant(model_url: str) -> tuple[str, str]:
+def _hf_repo(model_url: str) -> str:
     if "huggingface.co/" not in model_url:
         raise ValueError(f"Only HuggingFace URLs are supported: {model_url}")
     parts = model_url.split("huggingface.co/")[1].split("/")
     if len(parts) < 2:
         raise ValueError(f"Cannot parse HF repo from: {model_url}")
-    repo = f"{parts[0]}/{parts[1]}"
-    filename = model_url.rsplit("/", 1)[-1]
-    if not filename.endswith(".gguf"):
+    if not model_url.endswith(".gguf"):
         raise ValueError(f"Expected .gguf URL, got: {model_url}")
-    name = filename[:-5]
-    quant_part = name.rsplit("-", 1)[-1]
-    if not quant_part.startswith(("Q", "q")):
-        raise ValueError(f"Cannot infer quant from filename: {filename}")
-    return repo, quant_part
+    return f"{parts[0]}/{parts[1]}"
 
 
 def submit_geniex_bench_to_qdc_device(
@@ -441,9 +461,15 @@ def submit_geniex_bench_to_qdc_device(
     device_alias: str = "hybrid",
     job_name: str = "geniex-bench",
     save_results_dir: str | None = None,
+    geniex_version: str | None = None,
+    llamacpp_quant: str | None = None,
 ) -> list[GenieXBenchMetrics]:
     # plugin="qairt": model_ref is a local genie bundle dir (uploaded
-    # under qairt_bundles/). plugin="llama_cpp": model_ref is a HF GGUF URL.
+    # under qairt_bundles/). plugin="llama_cpp": model_ref is a HF GGUF URL
+    # and llamacpp_quant is the GGUF quant token (e.g. "q4_0", "mxfp4"),
+    # taken from release-assets.yaml's precision key.
+    if plugin == "llama_cpp" and not llamacpp_quant:
+        raise ValueError("llamacpp_quant is required when plugin='llama_cpp'.")
     qdc_device = QDCDevice(hub_device_name)
 
     matrix_rows: list[str] = []
@@ -453,8 +479,7 @@ def submit_geniex_bench_to_qdc_device(
             qairt_bundles[name] = ref
             model_id = name
         else:
-            repo, quant = _hf_repo_and_quant(ref)
-            model_id = f"{repo}:{quant}"
+            model_id = f"{_hf_repo(ref)}:{llamacpp_quant}"
         matrix_rows.append(f"{name}|{plugin}|{device_alias}|{model_id}||")
 
     geniex_job = GenieXBenchQDCJobs(
@@ -469,6 +494,7 @@ def submit_geniex_bench_to_qdc_device(
         plugin,
         context_lengths=context_lengths,
         qairt_bundles=qairt_bundles or None,
+        geniex_version=geniex_version,
     )
 
     last_failure_reason: str | None = None

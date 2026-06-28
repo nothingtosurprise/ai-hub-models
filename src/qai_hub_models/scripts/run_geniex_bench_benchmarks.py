@@ -221,6 +221,8 @@ def run_geniex_bench_job(
     context_lengths: list[int],
     save_dir_root: str,
     plugin: str,
+    geniex_version: str | None,
+    llamacpp_quant: str | None = None,
 ) -> list[GenieXBenchMetrics]:
     sd = _scorecard_device(device_token)
     device_alias = ",".join(LLAMACPP_DEVICE_ALIASES) if plugin == "llama_cpp" else "npu"
@@ -230,6 +232,7 @@ def run_geniex_bench_job(
     print(f"Plugin:  {plugin} (alias={device_alias})")
     print(f"Ref:     {model_ref}")
     print(f"Ctx:     {context_lengths}")
+    print(f"GenieX:  {geniex_version or 'latest stable mirror'}")
     print(f"{'=' * 60}")
 
     save_dir = os.path.join(save_dir_root, model_id, sd.name)
@@ -243,6 +246,8 @@ def run_geniex_bench_job(
         device_alias=device_alias,
         job_name=f"geniex-bench {plugin} {model_id}",
         save_results_dir=save_dir,
+        geniex_version=geniex_version,
+        llamacpp_quant=llamacpp_quant,
     )
 
 
@@ -276,7 +281,20 @@ def main() -> int:
         default="geniex_perf_updates.json",
         help="JSON manifest of update_perf_yaml calls; replayed by run_geniex_perf_updates.py.",
     )
+    ap.add_argument(
+        "--geniex-version",
+        default=None,
+        help='GenieX release tag (e.g. "v0.3.1") to pin geniex-bench/APK '
+        'downloads to. Defaults to the unversioned "latest stable" mirror.',
+    )
     args = ap.parse_args()
+    if args.geniex_version and not args.geniex_version.startswith("v"):
+        print(
+            f"WARNING: --geniex-version={args.geniex_version!r} does not start "
+            f'with "v"; release tags are SemVer-prefixed (e.g. "v0.3.1"). The '
+            f"S3 download will likely 404.",
+            file=sys.stderr,
+        )
 
     api_token = os.environ.get("QDC_API_TOKEN")
     if not api_token:
@@ -345,6 +363,7 @@ def main() -> int:
                                 ctx_list,
                                 args.results_dir,
                                 plugin,
+                                args.geniex_version,
                             )
                         else:
                             metrics = run_geniex_bench_job(
@@ -355,6 +374,8 @@ def main() -> int:
                                 LLAMACPP_CONTEXT_LENGTHS,
                                 args.results_dir,
                                 plugin,
+                                args.geniex_version,
+                                llamacpp_quant=str(precision),
                             )
                     except Exception as e:
                         print(

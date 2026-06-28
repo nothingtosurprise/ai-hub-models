@@ -92,7 +92,7 @@ foreach ($ctx in $ctxList) {
     if (Test-Path $tsv) { Get-Content $tsv }
     Invoke-GenieXBenchRetry -BenchArgs @(
         "--matrix-file", $tsv, "--output-json-dir", $OUT, "-r", "3",
-        "-c", "$ctx", {PREFILL_FLAGS_ARGS}
+        {BENCH_SIZE_FLAGS_ARGS}
         "--mm-data-dir", $MM_CACHE, "--chipset", "{CHIPSET}"
     )
     Write-Output "$((Get-ChildItem $OUT).Count) cell json files so far"

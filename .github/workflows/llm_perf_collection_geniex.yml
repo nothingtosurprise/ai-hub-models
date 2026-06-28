@@ -2,7 +2,7 @@
 ## then opens one PR replaying perf.yaml updates from a JSON manifest.
 
 name: GenieX Performance Collection
-run-name: "GenieX Perf (${{ inputs.model || 'all' }}, ${{ inputs.device || 'all' }})"
+run-name: "GenieX Perf (${{ inputs.model || 'all' }}, ${{ inputs.device || 'all' }}, ${{ inputs.geniex_version || 'latest' }})"
 
 env:
   VENV_PATH: build/ci-envs/qaihm-build
@@ -39,6 +39,12 @@ on:
         default: 'default'
         type: string
 
+      geniex_version:
+        description: 'Pin GenieX release tag (e.g. "v0.3.1"). Leave blank for the unversioned "latest stable" mirror.'
+        required: false
+        default: ''
+        type: string
+
       create_pr:
         description: 'Create PR with perf.yaml changes'
         default: true
@@ -65,6 +71,11 @@ on:
         description: 'Precision(s) to collect perf for. Comma-separated, "all", or "default" to use the model''s default precision.'
         type: string
         default: 'default'
+
+      geniex_version:
+        description: 'Pin GenieX release tag (e.g. "v0.3.1"). Leave blank for the unversioned "latest stable" mirror.'
+        type: string
+        default: ''
 
       create_pr:
         description: 'Create PR with perf.yaml changes'
@@ -126,14 +137,20 @@ jobs:
         QAIHM_TEST_DEVICES: ${{ inputs.device || 'cs_x2_elite,cs_x_elite' }}
         GENIEX_BENCH_PLUGIN: ${{ inputs.geniex_bench_plugin || 'all' }}
         GENIEX_BENCH_PRECISIONS: ${{ inputs.precision || 'default' }}
+        GENIEX_VERSION: ${{ inputs.geniex_version || '' }}
       run: |
         source ${{ env.VENV_PATH }}/bin/activate
         cd $GITHUB_WORKSPACE
+        extra=()
+        if [ -n "$GENIEX_VERSION" ]; then
+          extra+=(--geniex-version "$GENIEX_VERSION")
+        fi
         python -m qai_hub_models.scripts.run_geniex_bench_benchmarks \
           --models "$QAIHM_MODELS" \
           --devices "$QAIHM_TEST_DEVICES" \
           --plugin "$GENIEX_BENCH_PLUGIN" \
-          --precisions "$GENIEX_BENCH_PRECISIONS"
+          --precisions "$GENIEX_BENCH_PRECISIONS" \
+          "${extra[@]}"
 
     - name: Upload geniex-bench results
       id: upload-results

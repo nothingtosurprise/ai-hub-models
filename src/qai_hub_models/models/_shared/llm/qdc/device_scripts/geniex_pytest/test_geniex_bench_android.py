@@ -16,7 +16,6 @@ import shutil
 import subprocess
 import tarfile
 import urllib.request
-import zipfile
 from pathlib import Path
 
 import pytest
@@ -36,8 +35,8 @@ DEVICE_RESULTS = f"{DEVICE_QDC_LOGS}/results"
 
 CTXS = tuple(int(c) for c in "{CTX_LIST}".split(","))
 ANDROID_BENCH_URL = "{ANDROID_BENCH_URL}"
-ANDROID_APK_URL = "{ANDROID_APK_URL}"
 PLUGIN = "{PLUGIN}"
+N_GEN = int("{N_GEN}")
 
 
 def adb(cmd: str, *, check: bool = True) -> subprocess.CompletedProcess:
@@ -105,6 +104,10 @@ def stage_bundle() -> None:
                 continue
             rel = m.name[len(top) + 1 :]
             dst = os.path.join(HOST_BUNDLE, rel)
+            real_dst = os.path.realpath(dst)
+            real_base = os.path.realpath(HOST_BUNDLE)
+            if not real_dst.startswith(real_base + os.sep):
+                raise ValueError(f"Refusing unsafe tar member path: {m.name!r}")
             if m.isdir():
                 os.makedirs(dst, exist_ok=True)
                 continue
@@ -115,17 +118,6 @@ def stage_bundle() -> None:
             with open(dst, "wb") as out:
                 shutil.copyfileobj(f, out)
             os.chmod(dst, m.mode | 0o400)
-
-    print(f"Fetching libomp.so from {ANDROID_APK_URL}")
-    with urllib.request.urlopen(ANDROID_APK_URL) as resp:
-        apk_bytes = resp.read()
-    libomp_dst = os.path.join(HOST_BUNDLE, "lib", "llama_cpp", "libomp.so")
-    with zipfile.ZipFile(io.BytesIO(apk_bytes)) as apk:
-        with (
-            apk.open("lib/arm64-v8a/libomp.so") as libomp_src,
-            open(libomp_dst, "wb") as libomp_out,
-        ):
-            shutil.copyfileobj(libomp_src, libomp_out)
 
 
 def push_bundle() -> None:
@@ -142,15 +134,16 @@ def _run_bench(
 ) -> int:
     if PLUGIN == "qairt":
         assert bundle_name is not None
-        prefill_flags = (
+        size_flags = (
+            f"-c {ctx} -n {N_GEN} "
             f"--prompt-file {DEVICE_QAIRT_BUNDLES}/{bundle_name}/sample_prompt.txt"
         )
     else:
-        prefill_flags = f"-p {ctx}"
+        size_flags = f"-c {ctx + N_GEN} -p {ctx} -n {N_GEN}"
     cmd = (
         f"cd {DEVICE_BUNDLE} && {env} ./bin/geniex-bench "
         f"--matrix-file {tsv_path} --output-json-dir {DEVICE_RESULTS} -r 3 "
-        f"-c {ctx} {prefill_flags} "
+        f"{size_flags} "
         f"--mm-data-dir {DEVICE_MM_CACHE} --chipset '{chipset}' "
         f"2>>{DEVICE_QDC_LOGS}/geniex_bench_stderr.log"
     )
