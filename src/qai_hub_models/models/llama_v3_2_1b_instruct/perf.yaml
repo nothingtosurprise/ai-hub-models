@@ -36,6 +36,15 @@ precisions:
                   max: 1504.032
                 prefill_tokens_per_second: 1191.8951416015625
                 desired_compute_unit: npu
+            geniex_qairt:
+              llm_metrics:
+              - context_length: 4096
+                tokens_per_second: 40.94156
+                time_to_first_token_range_milliseconds:
+                  min: 131.51883636363635
+                  max: 4208.602763636363
+                prefill_tokens_per_second: 973.244621
+                desired_compute_unit: npu
           SA8295P ADP:
             genie:
               llm_metrics:
@@ -58,11 +67,11 @@ precisions:
             geniex_qairt:
               llm_metrics:
               - context_length: 4096
-                tokens_per_second: 19.534953
+                tokens_per_second: 19.734352
                 time_to_first_token_range_milliseconds:
-                  min: 305.8920727272727
-                  max: 9788.546327272727
-                prefill_tokens_per_second: 418.448242
+                  min: 301.6145454545454
+                  max: 9651.665454545453
+                prefill_tokens_per_second: 424.382716
                 desired_compute_unit: npu
           Snapdragon X2 Elite CRD:
             genie:
@@ -73,6 +82,15 @@ precisions:
                   min: 74.874
                   max: 2395.968
                 prefill_tokens_per_second: 747.9431762695312
+                desired_compute_unit: npu
+            geniex_qairt:
+              llm_metrics:
+              - context_length: 4096
+                tokens_per_second: 37.868831
+                time_to_first_token_range_milliseconds:
+                  min: 129.01003636363635
+                  max: 4128.321163636363
+                prefill_tokens_per_second: 992.17087
                 desired_compute_unit: npu
           Dragonwing IQ-9075 EVK:
             genie:
@@ -87,11 +105,11 @@ precisions:
             geniex_qairt:
               llm_metrics:
               - context_length: 4096
-                tokens_per_second: 18.490501
+                tokens_per_second: 18.60058
                 time_to_first_token_range_milliseconds:
-                  min: 384.26763636363637
-                  max: 12296.564363636364
-                prefill_tokens_per_second: 333.101172
+                  min: 380.9792
+                  max: 12191.3344
+                prefill_tokens_per_second: 335.976347
                 desired_compute_unit: npu
           Snapdragon 8 Elite QRD:
             genie:
@@ -102,6 +120,15 @@ precisions:
                   min: 71.247
                   max: 2279.904
                 prefill_tokens_per_second: 786.1635131835938
+                desired_compute_unit: npu
+            geniex_qairt:
+              llm_metrics:
+              - context_length: 4096
+                tokens_per_second: 31.457655
+                time_to_first_token_range_milliseconds:
+                  min: 203.7666909090909
+                  max: 6520.534109090909
+                prefill_tokens_per_second: 628.1694
                 desired_compute_unit: npu
           Dragonwing Q-8750:
             genie:
@@ -134,6 +161,15 @@ precisions:
                   min: 30.0987
                   max: 963.1584
                 desired_compute_unit: npu
+            geniex_qairt:
+              llm_metrics:
+              - context_length: 4096
+                tokens_per_second: 75.516818
+                time_to_first_token_range_milliseconds:
+                  min: 64.76101818181819
+                  max: 2072.352581818182
+                prefill_tokens_per_second: 1976.497646
+                desired_compute_unit: npu
           SA8775P ADP:
             genie:
               llm_metrics:
@@ -152,6 +188,15 @@ precisions:
                   min: 78.2621
                   max: 2504.3872
                 desired_compute_unit: npu
+            geniex_qairt:
+              llm_metrics:
+              - context_length: 4096
+                tokens_per_second: 43.776555
+                time_to_first_token_range_milliseconds:
+                  min: 141.01876363636364
+                  max: 4512.600436363637
+                prefill_tokens_per_second: 907.680628
+                desired_compute_unit: npu
           Snapdragon X2 Elite CRD:
             genie:
               llm_metrics:
@@ -160,6 +205,15 @@ precisions:
                 time_to_first_token_range_milliseconds:
                   min: 50.8182
                   max: 1626.1824
+                desired_compute_unit: npu
+            geniex_qairt:
+              llm_metrics:
+              - context_length: 4096
+                tokens_per_second: 93.575277
+                time_to_first_token_range_milliseconds:
+                  min: 65.19156363636364
+                  max: 2086.1300363636365
+                prefill_tokens_per_second: 1963.444238
                 desired_compute_unit: npu
           Dragonwing IQ-9075 EVK:
             genie:
@@ -174,11 +228,11 @@ precisions:
             geniex_qairt:
               llm_metrics:
               - context_length: 4096
-                tokens_per_second: 40.237311
+                tokens_per_second: 39.581492
                 time_to_first_token_range_milliseconds:
-                  min: 143.91156363636364
-                  max: 4605.170036363636
-                prefill_tokens_per_second: 889.435128
+                  min: 141.14676363636363
+                  max: 4516.696436363636
+                prefill_tokens_per_second: 906.857491
                 desired_compute_unit: npu
           Snapdragon 8 Elite QRD:
             genie:
@@ -192,11 +246,11 @@ precisions:
             geniex_qairt:
               llm_metrics:
               - context_length: 4096
-                tokens_per_second: 67.97981
+                tokens_per_second: 60.211342
                 time_to_first_token_range_milliseconds:
-                  min: 86.46283636363636
-                  max: 2766.8107636363634
-                prefill_tokens_per_second: 1480.404823
+                  min: 92.5090909090909
+                  max: 2960.290909090909
+                prefill_tokens_per_second: 1383.647799
                 desired_compute_unit: npu
           SA8255P ADP:
             genie:
