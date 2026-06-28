@@ -73,6 +73,15 @@ precisions:
                   max: 2729.92
                 prefill_tokens_per_second: 656.5988159179688
                 desired_compute_unit: npu
+            geniex_qairt:
+              llm_metrics:
+              - context_length: 4096
+                tokens_per_second: 43.158162
+                time_to_first_token_range_milliseconds:
+                  min: 149.60407272727272
+                  max: 4787.330327272727
+                prefill_tokens_per_second: 855.591681
+                desired_compute_unit: npu
           SA8775P ADP:
             genie:
               llm_metrics:
